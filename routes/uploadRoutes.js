@@ -5,24 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const { requireAdmin } = require('../middleware/auth');
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer disk storage configuration
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const cleanName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '-').slice(0, 30);
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E6);
-    cb(null, `${cleanName}-${uniqueSuffix}${ext}`);
-  }
-});
+// Memory storage use karein taake Vercel crash na ho
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const allowed = /jpeg|jpg|png|webp|gif|svg/;
@@ -37,25 +21,39 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 4 * 1024 * 1024 }, // 4MB limit
   fileFilter
 });
 
-// POST /api/upload (Protected admin file upload)
+function bufferToDataURI(buffer, mimetype) {
+  return `data:${mimetype};base64,${buffer.toString('base64')}`;
+}
+
+// POST /api/upload
 router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ ok: false, error: 'No image file uploaded.' });
     }
 
-    // Return relative public URL path
-    const fileUrl = `/uploads/${req.file.filename}`;
+    // Convert to Data URI so it saves directly in MongoDB
+    const dataUri = bufferToDataURI(req.file.buffer, req.file.mimetype);
+
+    // Optional local backup
+    try {
+      const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      const cleanName = path.basename(req.file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '-').slice(0, 30);
+      const filename = `${cleanName}-${Date.now()}${ext}`;
+      fs.writeFileSync(path.join(uploadDir, filename), req.file.buffer);
+    } catch (e) {}
 
     return res.json({
       ok: true,
       message: 'Image uploaded successfully',
-      url: fileUrl,
-      filename: req.file.filename,
+      url: dataUri,
+      filename: req.file.originalname,
       size: req.file.size
     });
   } catch (err) {
@@ -71,7 +69,7 @@ router.post('/multiple', requireAdmin, upload.array('images', 8), async (req, re
       return res.status(400).json({ ok: false, error: 'No image files uploaded.' });
     }
 
-    const urls = req.files.map(f => `/uploads/${f.filename}`);
+    const urls = req.files.map(f => bufferToDataURI(f.buffer, f.mimetype));
 
     return res.json({
       ok: true,
