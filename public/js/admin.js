@@ -44,7 +44,7 @@ const AdminUI = {
         <form id="admin-login-form" novalidate>
           <div class="field" style="margin-bottom:14px">
             <label for="adm-email">Admin Email</label>
-            <input id="adm-email" type="email" placeholder="admin@rollpoint.pk" required autocomplete="email">
+            <input id="adm-email" type="email" placeholder="malikusmanhaider0346@gmail.com" required autocomplete="email">
             <span class="err">Please enter your email address.</span>
           </div>
           <div class="field" style="margin-bottom:20px">

@@ -249,16 +249,16 @@ async function seedDatabase() {
     }
 
     // 2. Seed Default Admin if not exists
-    const adminEmail = (process.env.DEFAULT_ADMIN_EMAIL || 'admin@rollpoint.pk').toLowerCase();
+    const adminEmail = (process.env.DEFAULT_ADMIN_EMAIL || 'malikusmanhaider0346@gmail.com').toLowerCase();
     const existingAdmin = await Admin.findOne({ email: adminEmail });
     if (!existingAdmin) {
       await Admin.create({
-        name: process.env.DEFAULT_ADMIN_NAME || 'RollPoint Administrator',
+        name: process.env.DEFAULT_ADMIN_NAME || 'Usman Haider',
         email: adminEmail,
-        password: process.env.DEFAULT_ADMIN_PASSWORD || 'admin123',
+        password: process.env.DEFAULT_ADMIN_PASSWORD || 'usman123@321',
         role: 'superadmin'
       });
-      console.log(`✅ Default admin account created: ${adminEmail} / ${process.env.DEFAULT_ADMIN_PASSWORD || 'admin123'}`);
+      console.log(`✅ Default admin account created: ${adminEmail}`);
     }
 
     // 3. Seed Products and Reviews if empty
