@@ -288,7 +288,9 @@ const Pages = {
             <p class="hero-sub">${esc(BUSINESS.heroSubtitle || 'Genuine BPA-free thermal paper, shipping labels and point-of-sale hardware for shops that never stop. Flat Rs. 250 delivery, cash on delivery, nationwide.')}</p>
             <div class="hero-cta">
               <a class="btn btn-ink btn-lg" href="#/shop">${esc(BUSINESS.heroBtn1Text || 'Shop all products')} <i data-lucide="arrow-right"></i></a>
-              <button class="btn btn-outline btn-lg" data-action="scroll-to" data-target="#home-cats">${esc(BUSINESS.heroBtn2Text || 'Browse categories')}</button>
+              <a class="btn btn-whatsapp btn-lg" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent('Hi RollPoint! I want to order thermal rolls & supplies.')}" target="_blank">
+                <i data-lucide="message-circle"></i> Chat on WhatsApp
+              </a>
             </div>
             <div class="hero-stats mono">
               ${statsHtml}
@@ -317,6 +319,10 @@ const Pages = {
       <section class="section" id="home-cats">
         <div class="container">
           ${Components.sectionHead('01 — Catalog', 'Shop by category', 'Six focused aisles — nothing you don’t need, everything your counter does.', { href: '#/shop', label: 'All products' })}
+          <div class="mobile-cat-strip">
+            <a class="cat-chip active" href="#/shop"><i data-lucide="layout-grid"></i> All Products</a>
+            ${cats.map(c => `<a class="cat-chip" href="#/category/${c.slug}">${esc(c.name)}</a>`).join('')}
+          </div>
           <div class="cat-grid">${tiles}${viewAll}</div>
         </div>
       </section>
@@ -513,9 +519,12 @@ const Pages = {
                 <span class="qty-val" id="qty-val">1</span>
                 <button data-action="qty-plus" aria-label="Increase quantity"><i data-lucide="plus"></i></button>
               </div>
-              <button class="btn btn-accent btn-lg btn-buy" data-action="order-now" data-id="${p.id}" ${out ? 'disabled' : ''}>
-                <i data-lucide="package"></i> Order Now
+              <button class="btn btn-accent btn-lg btn-buy" id="main-buy-btn" data-action="order-now" data-id="${p.id}" ${out ? 'disabled' : ''}>
+                <i data-lucide="package"></i> Order Now (COD)
               </button>
+              <a class="btn btn-whatsapp btn-buy-wa" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollPoint! I want to order ${p.name} (Rs. ${p.price}). Please confirm availability.`)}" target="_blank">
+                <i data-lucide="message-circle"></i> Order via WhatsApp
+              </a>
             </div>
             <ul class="perks">
               <li><i data-lucide="truck"></i>Flat ${formatPrice(OrderMath.FLAT_SHIPPING)} delivery</li>
@@ -548,6 +557,11 @@ const Pages = {
           <div class="rail" id="rel-rail">${related.map(r => Components.productCard(r, r.categoryName || r.category)).join('')}</div>
         </section>` : ''}
       </div>`;
+    },
+    mount(data) {
+      if (data && data.p) {
+        UI.setupPdpStickyBar(data.p);
+      }
     }
   },
 
@@ -562,6 +576,39 @@ const Pages = {
     },
     render({ p, qty }) {
       const img0 = (p.images && p.images[0]) || 'https://picsum.photos/600/600';
+      const sub = OrderMath.subtotal(p.price, qty);
+      const ship = OrderMath.shipping();
+      const total = OrderMath.total(p.price, qty);
+
+      const mobileSummaryHtml = `
+      <div class="mobile-order-summary" id="mobile-order-summary">
+        <div class="summary-toggle" data-action="toggle-summary">
+          <span class="sum-left">
+            <i data-lucide="receipt"></i>
+            <span>Order Summary (${qty} item${qty > 1 ? 's' : ''})</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <span class="sum-price">${formatPrice(total)}</span>
+            <i data-lucide="chevron-down"></i>
+          </span>
+        </div>
+        <div class="summary-content">
+          <div class="r-item-edit" style="margin-bottom:12px">
+            <img src="${img0}" alt="">
+            <div><b>${esc(p.name)}</b><small>Qty: ${qty} · ${formatPrice(p.price)} each</small></div>
+            <a href="#/product/${p.slug}">Edit</a>
+          </div>
+          <div style="font-size:13px;color:var(--ink-2);display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatPrice(sub)}</span></div>
+            <div style="display:flex;justify-content:space-between"><span>Flat Nationwide Shipping</span><span>${formatPrice(ship)}</span></div>
+            <div style="border-top:1px dashed var(--line-2);padding-top:6px;display:flex;justify-content:space-between;font-weight:700;color:var(--ink)">
+              <span>Total Payable (COD)</span>
+              <span style="color:var(--accent);font-family:var(--fm)">${formatPrice(total)}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
       return `
       <div class="container">
         ${Components.breadcrumbs([
@@ -575,6 +622,8 @@ const Pages = {
             <h1>Complete your order</h1>
             <p class="lead">Fill in your details below — our team confirms every order on WhatsApp before dispatch.</p>
 
+            ${mobileSummaryHtml}
+
             <form class="order-form" data-form="order" data-id="${p.id}" novalidate>
               <div class="form-title"><i data-lucide="user"></i> Customer details</div>
               <div class="form-grid">
@@ -585,17 +634,17 @@ const Pages = {
                 </div>
                 <div class="field">
                   <label for="f-phone">Working / WhatsApp number *</label>
-                  <input id="f-phone" name="phone" type="tel" placeholder="03XX XXXXXXX" autocomplete="tel" required>
+                  <input id="f-phone" name="phone" type="tel" inputmode="tel" placeholder="03XX XXXXXXX" autocomplete="tel" required>
                   <span class="err">Enter a valid 11-digit mobile number (03XXXXXXXXX).</span>
                 </div>
                 <div class="field full">
                   <label for="f-email">Email <small>(optional, for receipt & updates)</small></label>
-                  <input id="f-email" name="email" type="email" placeholder="you@example.com" autocomplete="email">
+                  <input id="f-email" name="email" type="email" inputmode="email" placeholder="you@example.com" autocomplete="email">
                   <span class="err">Enter a valid email address.</span>
                 </div>
                 <div class="field full">
                   <label for="f-address">Full delivery address *</label>
-                  <textarea id="f-address" name="address" placeholder="House / shop no., street, area landmark…" required></textarea>
+                  <textarea id="f-address" name="address" placeholder="House / shop no., street, area landmark…" autocomplete="street-address" required></textarea>
                   <span class="err">Please enter a complete delivery address (at least 6 characters).</span>
                 </div>
                 <div class="field">
@@ -611,9 +660,15 @@ const Pages = {
 
               <div class="confirm-wrap">
                 <button class="btn btn-accent btn-lg btn-block" type="submit" data-role="confirm-btn">
-                  <i data-lucide="check"></i> Order Confirm
+                  <i data-lucide="check"></i> Confirm Cash on Delivery
                 </button>
                 <p class="confirm-note">Cash on delivery · Flat Rs. 250 shipping · Instant WhatsApp confirmation</p>
+                <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line-2)">
+                  <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Skip typing address? Order directly on WhatsApp:</p>
+                  <a class="btn btn-whatsapp btn-sm btn-block" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollPoint! I want to order ${p.name} (Qty: ${qty}, Total: ${formatPrice(total)} COD). Please confirm my order.`)}" target="_blank">
+                    <i data-lucide="message-circle"></i> Quick Order via WhatsApp
+                  </a>
+                </div>
               </div>
             </form>
           </div>
@@ -794,7 +849,12 @@ const Router = {
     document.documentElement.scrollTop = 0;
     if (page.mount) page.mount(data, params);
     refreshIcons(); hydrateReveals(app);
-    UI.setActiveNav(); UI.updateTitle(cur.path, params);
+    UI.setActiveNav();
+    UI.setActiveBottomNav();
+    UI.updateTitle(cur.path, params);
+    if (!cur.path.startsWith('/product')) {
+      UI.removePdpStickyBar();
+    }
   }
 };
 
@@ -825,7 +885,12 @@ const UI = {
           <i data-lucide="message-circle"></i>
           <span><small>Order on WhatsApp</small><b>${BUSINESS.whatsappLocal}</b></span>
         </a>
-        <button class="icon-btn menu-btn" data-action="menu-open" aria-label="Open menu"><i data-lucide="menu"></i></button>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+          <a class="icon-btn mobile-only-btn" href="https://wa.me/${BUSINESS.whatsappIntl}" target="_blank" aria-label="WhatsApp" style="color:#25D366;border-color:rgba(37,211,102,0.4)">
+            <i data-lucide="message-circle"></i>
+          </a>
+          <button class="icon-btn menu-btn" data-action="menu-open" aria-label="Open menu"><i data-lucide="menu"></i></button>
+        </div>
       </div>
       <div class="container mobile-search">${this.searchBox('search-mobile')}</div>
       <nav class="mainnav" aria-label="Primary">
@@ -841,6 +906,102 @@ const UI = {
           <a href="#/about" data-nav="about">About &amp; Contact</a>
         </div>
       </nav>`;
+  },
+
+  renderBottomBar(cats = []) {
+    const bar = document.getElementById('mobile-bottom-bar');
+    if (!bar) return;
+    bar.innerHTML = `
+      <a class="m-tab" href="#/" data-tab="home">
+        <i data-lucide="home"></i>
+        <span>Home</span>
+      </a>
+      <a class="m-tab" href="#/shop" data-tab="shop">
+        <i data-lucide="shopping-bag"></i>
+        <span>Shop</span>
+      </a>
+      <a class="m-tab" href="javascript:void(0)" data-action="menu-open" data-tab="categories">
+        <i data-lucide="layout-grid"></i>
+        <span>Categories</span>
+      </a>
+      <a class="m-tab wa-tab" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent('Hi RollPoint! I want to inquire about products.')}" target="_blank" data-tab="whatsapp">
+        <i data-lucide="message-circle"></i>
+        <span>WhatsApp</span>
+      </a>
+      <a class="m-tab" href="javascript:void(0)" data-action="menu-open" data-tab="menu">
+        <i data-lucide="menu"></i>
+        <span>Menu</span>
+      </a>`;
+    refreshIcons(bar);
+  },
+
+  setActiveBottomNav() {
+    const cur = Router.current();
+    const path = cur ? cur.path : '/';
+    const tabs = document.querySelectorAll('.m-tab');
+    tabs.forEach(t => t.classList.remove('active'));
+
+    if (path === '/' || path === '') {
+      document.querySelector('.m-tab[data-tab="home"]')?.classList.add('active');
+    } else if (path === '/shop' || path.startsWith('/search') || path.startsWith('/order')) {
+      document.querySelector('.m-tab[data-tab="shop"]')?.classList.add('active');
+    } else if (path.startsWith('/category')) {
+      document.querySelector('.m-tab[data-tab="categories"]')?.classList.add('active');
+    }
+  },
+
+  setupPdpStickyBar(p) {
+    const root = document.getElementById('pdp-sticky-bar-root');
+    if (!root) return;
+    const img0 = (p.images && p.images[0]) || 'https://picsum.photos/100/100';
+    const out = p.stock <= 0;
+
+    root.innerHTML = `
+      <div class="pdp-sticky-bar" id="pdp-sticky-bar">
+        <div class="pdp-sticky-info">
+          <img class="pdp-sticky-img" src="${img0}" alt="">
+          <div class="pdp-sticky-text">
+            <span class="pdp-sticky-name">${esc(p.name)}</span>
+            <span class="pdp-sticky-price">${formatPrice(p.price)}</span>
+          </div>
+        </div>
+        <div class="pdp-sticky-actions">
+          <a class="pdp-sticky-btn wa-btn" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollPoint! I want to order ${p.name} (Rs. ${p.price}).`)}" target="_blank" title="WhatsApp Order">
+            <i data-lucide="message-circle"></i>
+          </a>
+          <button class="btn btn-accent pdp-sticky-btn" data-action="order-now" data-id="${p.id}" ${out ? 'disabled' : ''}>
+            <i data-lucide="package"></i> Order Now
+          </button>
+        </div>
+      </div>`;
+    refreshIcons(root);
+
+    if (window._pdpStickyHandler) {
+      window.removeEventListener('scroll', window._pdpStickyHandler);
+    }
+    window._pdpStickyHandler = () => {
+      const bar = document.getElementById('pdp-sticky-bar');
+      if (!bar) return;
+      const mainBuy = document.getElementById('main-buy-btn') || document.querySelector('.buy-row');
+      if (!mainBuy) return;
+      const rect = mainBuy.getBoundingClientRect();
+      if (rect.bottom < 60) {
+        bar.classList.add('visible');
+      } else {
+        bar.classList.remove('visible');
+      }
+    };
+    window.addEventListener('scroll', window._pdpStickyHandler, { passive: true });
+    window._pdpStickyHandler();
+  },
+
+  removePdpStickyBar() {
+    if (window._pdpStickyHandler) {
+      window.removeEventListener('scroll', window._pdpStickyHandler);
+      window._pdpStickyHandler = null;
+    }
+    const root = document.getElementById('pdp-sticky-bar-root');
+    if (root) root.innerHTML = '';
   },
 
   renderDrawer(cats) {
@@ -967,6 +1128,7 @@ const UI = {
 const Actions = {
   'menu-open':     () => UI.openDrawer(),
   'menu-close':    () => UI.closeDrawer(),
+  'toggle-summary':() => document.getElementById('mobile-order-summary')?.classList.toggle('open'),
   'rail-prev':     el => document.getElementById(el.dataset.target)?.scrollBy({ left: -296, behavior: 'smooth' }),
   'rail-next':     el => document.getElementById(el.dataset.target)?.scrollBy({ left: 296, behavior: 'smooth' }),
   'scroll-to':     el => document.querySelector(el.dataset.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
@@ -1230,11 +1392,12 @@ function hydrateReveals(scope = document) {
     // 2. Fetch categories
     const cats = await Api.getCategories().catch(() => []);
 
-    // 3. Render Header, Topbar, Drawer, Footer
+    // 3. Render Header, Topbar, Drawer, Footer, Bottom Bar
     UI.renderTopbar();
     UI.renderHeader(cats);
     UI.renderDrawer(cats);
     UI.renderFooter(cats);
+    UI.renderBottomBar(cats);
     bindSearch();
 
     // 4. Initial Route Render

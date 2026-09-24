@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: rollpoint-shop
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: STORE_NAME
+        value: RollPoint
+      - key: STORE_EMAIL
+        value: orders@rollpoint.pk
+      - key: WHATSAPP_NUMBER
+        value: "03089134302"
+      - key: WHATSAPP_INTL
+        value: "923089134302"
+      - key: FLAT_SHIPPING_RATE
+        value: "250"
+      - key: CLIENT_URL
+        value: "*"
