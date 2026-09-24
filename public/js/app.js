@@ -9,6 +9,7 @@
 let BUSINESS = {
   name: 'RollPoint',
   tagline: 'Counter supplies, delivered.',
+  logo: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1790260393/rollpoint/brand/rollpoint-official-logo.webp',
   heroKicker: '// Counter supplies · Pakistan',
   heroTitle: 'Thermal rolls, labels & POS gear — delivered to your counter.',
   heroSubtitle: 'Genuine BPA-free thermal paper, shipping labels and point-of-sale hardware for shops that never stop. Flat Rs. 250 delivery, cash on delivery, nationwide.',
@@ -95,6 +96,9 @@ const OrderMath = {
 // UI Components
 const Components = {
   logo(bg = 'var(--ink)', fg = 'var(--paper)') {
+    if (BUSINESS.logo) {
+      return `<img src="${BUSINESS.logo}" alt="${esc(BUSINESS.name || 'RollPoint')}" class="brand-logo-img">`;
+    }
     return `<svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
       <rect width="40" height="40" rx="10" fill="${bg}"/>
       <circle cx="20" cy="15.5" r="8" stroke="${fg}" stroke-width="2.4"/>
@@ -1373,6 +1377,7 @@ function hydrateReveals(scope = document) {
         usp3Sub: settings.usp3Sub || BUSINESS.usp3Sub,
         usp4Title: settings.usp4Title || BUSINESS.usp4Title,
         usp4Sub: settings.usp4Sub || BUSINESS.usp4Sub,
+        logo: settings.logo || BUSINESS.logo,
         whatsappLocal: settings.whatsappNumber || BUSINESS.whatsappLocal,
         whatsappIntl: settings.whatsappIntl || BUSINESS.whatsappIntl,
         email: settings.contactEmail || BUSINESS.email,
