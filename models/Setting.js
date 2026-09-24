@@ -44,11 +44,15 @@ const settingSchema = new mongoose.Schema({
   },
   contactEmail: {
     type: String,
-    default: 'orders@rollpoint.pk'
+    default: 'malikusmanhaider0346@gmail.com'
   },
   contactAddress: {
     type: String,
-    default: 'Shop 12, Main Bazar, Lahore, Pakistan'
+    default: 'Rehmat Plaza, Pakistan Town Phase 2 Rd, near Allah Wali Masjid, Phase 2 Islamabad, 45720, Pakistan'
+  },
+  googleMapsUrl: {
+    type: String,
+    default: 'https://maps.app.goo.gl/N9xDnGzuN3n8PbCD6?g_st=awb'
   },
   contactHours: {
     type: String,

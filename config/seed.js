@@ -239,8 +239,9 @@ async function seedDatabase() {
         tagline: 'Counter supplies, delivered.',
         whatsappNumber: process.env.WHATSAPP_NUMBER || '0308 9134302',
         whatsappIntl: process.env.WHATSAPP_INTL || '923089134302',
-        contactEmail: process.env.STORE_EMAIL || 'orders@rollpoint.pk',
-        contactAddress: process.env.STORE_ADDRESS || 'Shop 12, Main Bazar, Lahore, Pakistan',
+        contactEmail: process.env.STORE_EMAIL || 'malikusmanhaider0346@gmail.com',
+        contactAddress: process.env.STORE_ADDRESS || 'Rehmat Plaza, Pakistan Town Phase 2 Rd, near Allah Wali Masjid, Phase 2 Islamabad, 45720, Pakistan',
+        googleMapsUrl: process.env.GOOGLE_MAPS_URL || 'https://maps.app.goo.gl/N9xDnGzuN3n8PbCD6?g_st=awb',
         contactHours: process.env.STORE_HOURS || 'Mon–Sat · 10:00 am – 8:00 pm',
         shippingRate: parseInt(process.env.FLAT_SHIPPING_RATE || '250', 10)
       });

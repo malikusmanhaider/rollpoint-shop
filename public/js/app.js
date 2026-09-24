@@ -28,8 +28,9 @@ let BUSINESS = {
   usp4Sub: '0308 9134302',
   whatsappLocal: '0308 9134302',
   whatsappIntl:  '923089134302',
-  email: 'orders@rollpoint.pk',
-  address: 'Shop 12, Main Bazar, Lahore, Pakistan',
+  email: 'malikusmanhaider0346@gmail.com',
+  address: 'Rehmat Plaza, Pakistan Town Phase 2 Rd, near Allah Wali Masjid, Phase 2 Islamabad, 45720, Pakistan',
+  mapsUrl: 'https://maps.app.goo.gl/N9xDnGzuN3n8PbCD6?g_st=awb',
   hours: 'Mon–Sat · 10:00 am – 8:00 pm',
   shippingRate: 250,
   footerAboutText: 'RollPoint supplies genuine BPA-free thermal rolls, labels and POS hardware to counters across Pakistan — dispatched within 24 hours, delivered on cash-on-delivery.'
@@ -756,8 +757,8 @@ const Pages = {
               <h3>Contact us</h3>
               <p>We reply within working hours — usually much faster on WhatsApp.</p>
               <div class="contact-line"><i data-lucide="phone"></i><div><b>Phone / WhatsApp</b><span class="mono">${BUSINESS.whatsappLocal}</span></div></div>
-              <div class="contact-line"><i data-lucide="mail"></i><div><b>Email</b><span class="mono">${BUSINESS.email}</span></div></div>
-              <div class="contact-line"><i data-lucide="map-pin"></i><div><b>Warehouse</b><span>${BUSINESS.address}</span></div></div>
+              <div class="contact-line"><i data-lucide="mail"></i><div><b>Email</b><a href="mailto:${BUSINESS.email}" class="mono" style="color:var(--accent);text-decoration:none">${BUSINESS.email}</a></div></div>
+              <div class="contact-line"><i data-lucide="map-pin"></i><div><b>Warehouse &amp; Location</b><span>${BUSINESS.address}</span><a href="${BUSINESS.mapsUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:var(--accent);font-weight:600;font-size:13px;margin-top:6px;text-decoration:none;"><i data-lucide="map" style="width:14px;height:14px"></i> Open in Google Maps <i data-lucide="external-link" style="width:12px;height:12px"></i></a></div></div>
               <div class="contact-line"><i data-lucide="clock"></i><div><b>Hours</b><span>${BUSINESS.hours}</span></div></div>
               <a class="btn btn-accent btn-block" style="margin-top:20px" href="#/shop">Start an order <i data-lucide="arrow-right"></i></a>
             </div>
@@ -1041,8 +1042,8 @@ const UI = {
           <h4>Contact</h4>
           <ul class="foot-contact">
             <li><i data-lucide="message-circle"></i><span class="mono">WhatsApp · ${BUSINESS.whatsappLocal}</span></li>
-            <li><i data-lucide="mail"></i><span class="mono">${BUSINESS.email}</span></li>
-            <li><i data-lucide="map-pin"></i><span>${BUSINESS.address}</span></li>
+            <li><i data-lucide="mail"></i><a href="mailto:${BUSINESS.email}" class="mono" style="color:inherit;text-decoration:none">${BUSINESS.email}</a></li>
+            <li><i data-lucide="map-pin"></i><span>${BUSINESS.address}<br><a href="${BUSINESS.mapsUrl}" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:3px;margin-top:3px;text-decoration:none;">View on Google Maps <i data-lucide="external-link" style="width:11px;height:11px"></i></a></span></li>
             <li><i data-lucide="clock"></i><span>${BUSINESS.hours}</span></li>
           </ul>
         </div>
@@ -1376,6 +1377,7 @@ function hydrateReveals(scope = document) {
         whatsappIntl: settings.whatsappIntl || BUSINESS.whatsappIntl,
         email: settings.contactEmail || BUSINESS.email,
         address: settings.contactAddress || BUSINESS.address,
+        mapsUrl: settings.googleMapsUrl || BUSINESS.mapsUrl,
         hours: settings.contactHours || BUSINESS.hours,
         shippingRate: settings.shippingRate !== undefined ? settings.shippingRate : BUSINESS.shippingRate,
         footerAboutText: settings.footerAboutText || BUSINESS.footerAboutText

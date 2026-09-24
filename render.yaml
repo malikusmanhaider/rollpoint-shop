@@ -24,7 +24,11 @@ services:
       - key: STORE_NAME
         value: RollPoint
       - key: STORE_EMAIL
-        value: orders@rollpoint.pk
+        value: malikusmanhaider0346@gmail.com
+      - key: STORE_ADDRESS
+        value: "Rehmat Plaza, Pakistan Town Phase 2 Rd, near Allah Wali Masjid, Phase 2 Islamabad, 45720, Pakistan"
+      - key: GOOGLE_MAPS_URL
+        value: "https://maps.app.goo.gl/N9xDnGzuN3n8PbCD6?g_st=awb"
       - key: WHATSAPP_NUMBER
         value: "03089134302"
       - key: WHATSAPP_INTL

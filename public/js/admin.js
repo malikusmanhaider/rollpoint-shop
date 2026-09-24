@@ -1144,7 +1144,7 @@ const AdminUI = {
 
             <div class="field">
               <label for="st-email">Contact Email</label>
-              <input id="st-email" type="email" value="${esc(s.contactEmail || 'orders@rollpoint.pk')}">
+              <input id="st-email" type="email" value="${esc(s.contactEmail || 'malikusmanhaider0346@gmail.com')}">
             </div>
             <div class="field">
               <label for="st-shipping">Flat Nationwide Shipping Rate (Rs.)</label>
@@ -1153,7 +1153,11 @@ const AdminUI = {
 
             <div class="field full">
               <label for="st-address">Warehouse / Physical Address</label>
-              <input id="st-address" type="text" value="${esc(s.contactAddress || 'Shop 12, Main Bazar, Lahore, Pakistan')}">
+              <input id="st-address" type="text" value="${esc(s.contactAddress || 'Rehmat Plaza, Pakistan Town Phase 2 Rd, near Allah Wali Masjid, Phase 2 Islamabad, 45720, Pakistan')}">
+            </div>
+            <div class="field full">
+              <label for="st-maps-url">Google Maps Location Link (URL)</label>
+              <input id="st-maps-url" type="url" value="${esc(s.googleMapsUrl || 'https://maps.app.goo.gl/N9xDnGzuN3n8PbCD6?g_st=awb')}" placeholder="https://maps.app.goo.gl/...">
             </div>
             <div class="field full">
               <label for="st-hours">Business Hours</label>
@@ -1449,6 +1453,7 @@ const AdminUI = {
         contactEmail: document.getElementById('st-email').value.trim(),
         shippingRate: parseInt(document.getElementById('st-shipping').value, 10) || 250,
         contactAddress: document.getElementById('st-address').value.trim(),
+        googleMapsUrl: document.getElementById('st-maps-url') ? document.getElementById('st-maps-url').value.trim() : '',
         contactHours: document.getElementById('st-hours').value.trim(),
         heroKicker: document.getElementById('st-hero-kicker').value.trim(),
         heroTitle: document.getElementById('st-hero-title').value.trim(),
