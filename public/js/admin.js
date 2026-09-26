@@ -110,6 +110,9 @@ const AdminUI = {
           <div class="admin-nav-item ${this.currentTab === 'products' ? 'active' : ''}" data-tab="products">
             <i data-lucide="package"></i> Products
           </div>
+          <div class="admin-nav-item ${this.currentTab === 'categories' ? 'active' : ''}" data-tab="categories">
+            <i data-lucide="layers"></i> Categories
+          </div>
           <div class="admin-nav-item ${this.currentTab === 'orders' ? 'active' : ''}" data-tab="orders">
             <i data-lucide="shopping-bag"></i> Orders
             <span class="nav-count" id="nav-pending-orders" style="display:none">0</span>
@@ -151,6 +154,9 @@ const AdminUI = {
         container.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
         item.classList.add('active');
         this.currentTab = item.dataset.tab;
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
         this.loadTabContent();
       });
     });
@@ -174,7 +180,11 @@ const AdminUI = {
     const tabEl = document.getElementById('admin-tab-content');
     if (!tabEl) return;
 
-    tabEl.innerHTML = `<div style="text-align:center;padding:50px"><span class="spinner" style="border-top-color:var(--accent);width:28px;height:28px"></span></div>`;
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    tabEl.innerHTML = `<div style="text-align:center;padding:80px 20px;min-height:65vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px"><span class="spinner" style="border-top-color:var(--accent);width:32px;height:32px"></span><span style="font-size:13px;color:var(--muted)">Loading section…</span></div>`;
 
     try {
       switch (this.currentTab) {
@@ -183,6 +193,9 @@ const AdminUI = {
           break;
         case 'products':
           await this.renderTabProducts(tabEl);
+          break;
+        case 'categories':
+          await this.renderTabCategories(tabEl);
           break;
         case 'orders':
           await this.renderTabOrders(tabEl);
@@ -195,6 +208,9 @@ const AdminUI = {
           break;
       }
       refreshIcons(tabEl);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     } catch (err) {
       tabEl.innerHTML = `<div class="empty-state"><h3>Error loading section</h3><p>${esc(err.message)}</p></div>`;
     }
@@ -330,6 +346,9 @@ const AdminUI = {
         <p style="color:var(--muted);font-size:14px;margin-top:4px">Add, edit, change prices, update stock, and publish/unpublish products.</p>
       </div>
       <div class="admin-header-actions">
+        <button class="btn btn-outline btn-sm" id="btn-manage-categories">
+          <i data-lucide="layers"></i> Manage Categories
+        </button>
         <button class="btn btn-accent btn-sm" id="btn-add-product">
           <i data-lucide="plus"></i> Add New Product
         </button>
@@ -352,6 +371,13 @@ const AdminUI = {
         ${this.renderProductsTableHtml(this.productsCache)}
       </div>
     </div>`;
+
+    document.getElementById('btn-manage-categories')?.addEventListener('click', () => {
+      this.currentTab = 'categories';
+      document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
+      document.querySelector('[data-tab="categories"]')?.classList.add('active');
+      this.loadTabContent();
+    });
 
     document.getElementById('btn-add-product')?.addEventListener('click', () => this.openProductModal());
 
@@ -516,7 +542,20 @@ const AdminUI = {
           <input id="pm-name" type="text" required value="${esc(prod?.name || '')}" placeholder="e.g. Thermal Roll 80mm × 80m">
         </div>
         <div class="field">
-          <label for="pm-category">Category *</label>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <label for="pm-category" style="margin:0">Category *</label>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-quick-add-cat" style="font-size:11.5px;padding:2px 8px;gap:4px">
+              <i data-lucide="plus" style="width:12px;height:12px"></i> Add Category
+            </button>
+          </div>
+          <div id="quick-cat-box" style="display:none;background:var(--paper-deep);padding:10px 12px;border-radius:10px;margin-bottom:10px;border:1px solid var(--line-2)">
+            <div style="font-weight:600;font-size:12.5px;margin-bottom:6px;color:var(--ink)">Create New Category</div>
+            <div style="display:flex;gap:6px">
+              <input type="text" id="quick-cat-name-input" placeholder="Category name (e.g. Scanners)" style="flex:1;height:32px;font-size:13px;padding:0 8px;background:var(--surface);border:1px solid var(--line-2);border-radius:6px">
+              <button type="button" class="btn btn-accent btn-sm" id="btn-save-quick-cat" style="font-size:12px;height:32px;padding:0 10px">Save</button>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-cancel-quick-cat" style="font-size:12px;height:32px;padding:0 8px">Cancel</button>
+            </div>
+          </div>
           <select id="pm-category" required>
             ${this.categoriesCache.map(c => `
               <option value="${c.slug}" ${prod?.category === c.slug ? 'selected' : ''}>${esc(c.name)}</option>
@@ -617,6 +656,63 @@ const AdminUI = {
 
     document.getElementById('modal-close-btn').addEventListener('click', () => this.closeModal());
     document.getElementById('modal-cancel-btn').addEventListener('click', () => this.closeModal());
+
+    // Inline Quick Add Category
+    const quickBox = document.getElementById('quick-cat-box');
+    const quickInput = document.getElementById('quick-cat-name-input');
+    const quickBtn = document.getElementById('btn-quick-add-cat');
+    const saveQuickBtn = document.getElementById('btn-save-quick-cat');
+    const cancelQuickBtn = document.getElementById('btn-cancel-quick-cat');
+
+    if (quickBtn && quickBox) {
+      quickBtn.addEventListener('click', () => {
+        quickBox.style.display = quickBox.style.display === 'none' ? 'block' : 'none';
+        if (quickBox.style.display === 'block') quickInput?.focus();
+      });
+
+      cancelQuickBtn?.addEventListener('click', () => {
+        quickBox.style.display = 'none';
+        if (quickInput) quickInput.value = '';
+      });
+
+      const handleQuickSave = async () => {
+        const catName = quickInput?.value.trim();
+        if (!catName) {
+          UI.toast('Please enter a category name', 'alert-circle', 'error');
+          return;
+        }
+        saveQuickBtn.disabled = true;
+        saveQuickBtn.textContent = '…';
+        try {
+          const res = await Api.adminCreateCategory({ name: catName });
+          this.categoriesCache.push(res.category);
+          const sel = document.getElementById('pm-category');
+          if (sel) {
+            const opt = document.createElement('option');
+            opt.value = res.category.slug;
+            opt.textContent = res.category.name;
+            opt.selected = true;
+            sel.appendChild(opt);
+          }
+          quickBox.style.display = 'none';
+          if (quickInput) quickInput.value = '';
+          UI.toast(`Category "${res.category.name}" added and selected!`, 'check-circle-2', 'success');
+        } catch (err) {
+          UI.toast(err.message || 'Failed to create category', 'alert-circle', 'error');
+        } finally {
+          saveQuickBtn.disabled = false;
+          saveQuickBtn.textContent = 'Save';
+        }
+      };
+
+      saveQuickBtn?.addEventListener('click', handleQuickSave);
+      quickInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleQuickSave();
+        }
+      });
+    }
 
     // Add spec row
     document.getElementById('btn-add-spec-row').addEventListener('click', () => {
@@ -751,6 +847,383 @@ const AdminUI = {
 
   closeModal() {
     document.getElementById('admin-modal-overlay').classList.remove('show');
+  },
+
+  // -------------------------------------------------------------
+  // TAB: Categories Management
+  // -------------------------------------------------------------
+  async renderTabCategories(container) {
+    const [cats, prodsRes] = await Promise.all([
+      Api.getCategories({ includeAll: true }),
+      Api.adminGetProducts()
+    ]);
+    this.categoriesCache = cats || [];
+    this.productsCache = prodsRes.products || [];
+
+    // Compute live count of products in each category
+    const countMap = {};
+    this.productsCache.forEach(p => {
+      countMap[p.category] = (countMap[p.category] || 0) + 1;
+    });
+    this.categoriesCache.forEach(c => {
+      c.count = countMap[c.slug] || 0;
+    });
+
+    container.innerHTML = `
+    <div class="admin-header">
+      <div>
+        <h1>Categories Management</h1>
+        <p style="color:var(--muted);font-size:14px;margin-top:4px">Create categories, monitor product counts, and delete categories with product migration or removal.</p>
+      </div>
+      <div class="admin-header-actions">
+        <button class="btn btn-accent btn-sm" id="btn-add-cat-view">
+          <i data-lucide="plus"></i> Add New Category
+        </button>
+      </div>
+    </div>
+
+    <div class="admin-table-wrap">
+      <div class="admin-table-header">
+        <span style="font-size:14px;font-weight:600">All Categories (<span id="cat-total-count">${this.categoriesCache.length}</span>)</span>
+      </div>
+
+      <div id="admin-categories-table-body">
+        ${this.renderCategoriesTableHtml(this.categoriesCache)}
+      </div>
+    </div>`;
+
+    document.getElementById('btn-add-cat-view')?.addEventListener('click', () => this.openAddCategoryModal());
+    this.bindCategoryTableActions();
+  },
+
+  renderCategoriesTableHtml(categories) {
+    if (!categories.length) {
+      return `<div style="padding:40px;text-align:center;color:var(--muted)">No categories found. Click "Add New Category" above to create one.</div>`;
+    }
+
+    return `
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Category Name</th>
+          <th>Slug</th>
+          <th>Tagline / Description</th>
+          <th>Total Products</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${categories.map(c => `
+          <tr>
+            <td>
+              <b style="font-size:14.5px;color:var(--ink)">${esc(c.name)}</b>
+            </td>
+            <td>
+              <span class="mono" style="font-size:12px;background:var(--paper-deep);padding:3px 8px;border-radius:4px">/${esc(c.slug)}</span>
+            </td>
+            <td>
+              <span style="font-size:13px;color:var(--muted)">${esc(c.tagline || '—')}</span>
+            </td>
+            <td>
+              <span style="font-family:var(--fm);font-size:12px;padding:4px 10px;border-radius:999px;background:${c.count > 0 ? 'rgba(209,74,14,0.12)' : 'var(--paper-deep)'};color:${c.count > 0 ? 'var(--accent)' : 'var(--muted)'};font-weight:700">
+                ${c.count} ${c.count === 1 ? 'Product' : 'Products'}
+              </span>
+            </td>
+            <td>
+              <div class="table-actions">
+                <a class="btn-icon-sm" href="#/category/${c.slug}" target="_blank" title="View category on storefront"><i data-lucide="external-link"></i></a>
+                <button class="btn-icon-sm danger" data-action="delete-category" data-slug="${c.slug}" data-name="${esc(c.name)}" data-count="${c.count}" title="Delete category"><i data-lucide="trash-2"></i></button>
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+  },
+
+  bindCategoryTableActions() {
+    const table = document.getElementById('admin-categories-table-body');
+    if (!table) return;
+
+    table.querySelectorAll('[data-action="delete-category"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const slug = btn.dataset.slug;
+        const name = btn.dataset.name;
+        const count = parseInt(btn.dataset.count, 10) || 0;
+        this.openDeleteCategoryModal(slug, name, count);
+      });
+    });
+  },
+
+  openAddCategoryModal(onSuccessCallback = null) {
+    const modal = document.getElementById('admin-modal-content');
+    const overlay = document.getElementById('admin-modal-overlay');
+
+    modal.innerHTML = `
+    <div class="admin-modal-header">
+      <h3>Add New Category</h3>
+      <button class="icon-btn" id="cat-modal-close-btn"><i data-lucide="x"></i></button>
+    </div>
+    <form id="category-create-form" class="admin-modal-body">
+      <div class="form-grid">
+        <div class="field full">
+          <label for="cat-name">Category Name *</label>
+          <input id="cat-name" type="text" required placeholder="e.g. Barcode Scanners" autofocus>
+        </div>
+        <div class="field full">
+          <label for="cat-slug">Slug <small>(optional, auto-generated from name)</small></label>
+          <input id="cat-slug" type="text" placeholder="e.g. barcode-scanners">
+        </div>
+        <div class="field full">
+          <label for="cat-tagline">Tagline / Short description <small>(optional)</small></label>
+          <input id="cat-tagline" type="text" placeholder="e.g. 1D &amp; 2D wireless handheld scanners">
+        </div>
+      </div>
+    </form>
+    <div class="admin-modal-footer">
+      <button class="btn btn-outline" id="cat-modal-cancel-btn">Cancel</button>
+      <button class="btn btn-accent" id="btn-save-new-category">
+        <i data-lucide="plus"></i> Create Category
+      </button>
+    </div>`;
+
+    overlay.classList.add('show');
+    refreshIcons(modal);
+
+    const close = () => this.closeModal();
+    document.getElementById('cat-modal-close-btn').addEventListener('click', close);
+    document.getElementById('cat-modal-cancel-btn').addEventListener('click', close);
+
+    const form = document.getElementById('category-create-form');
+    const saveBtn = document.getElementById('btn-save-new-category');
+
+    const handleSave = async (e) => {
+      e?.preventDefault();
+      const name = document.getElementById('cat-name').value.trim();
+      const slug = document.getElementById('cat-slug').value.trim();
+      const tagline = document.getElementById('cat-tagline').value.trim();
+
+      if (!name) {
+        UI.toast('Category name is required', 'alert-circle', 'error');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner"></span> Creating…';
+
+      try {
+        const res = await Api.adminCreateCategory({ name, slug, tagline });
+        UI.toast(`Category "${res.category.name}" created!`, 'check-circle-2', 'success');
+        this.closeModal();
+
+        const updatedCats = await Api.getCategories({ includeAll: true });
+        this.categoriesCache = updatedCats || [];
+
+        if (onSuccessCallback) {
+          onSuccessCallback(res.category);
+        } else if (this.currentTab === 'categories') {
+          this.loadTabContent();
+        }
+      } catch (err) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i data-lucide="plus"></i> Create Category';
+        refreshIcons(saveBtn);
+        UI.toast(err.message || 'Failed to create category', 'alert-circle', 'error');
+      }
+    };
+
+    form.addEventListener('submit', handleSave);
+    saveBtn.addEventListener('click', handleSave);
+  },
+
+  openDeleteCategoryModal(slug, name, count) {
+    const modal = document.getElementById('admin-modal-content');
+    const overlay = document.getElementById('admin-modal-overlay');
+
+    const otherCategories = (this.categoriesCache || []).filter(c => c.slug !== slug);
+
+    if (count === 0) {
+      modal.innerHTML = `
+      <div class="admin-modal-header">
+        <h3>Delete Category</h3>
+        <button class="icon-btn" id="del-cat-close-btn"><i data-lucide="x"></i></button>
+      </div>
+      <div class="admin-modal-body" style="padding:24px 28px">
+        <p style="font-size:15px;color:var(--ink);margin-bottom:8px">Are you sure you want to delete category <strong>"${esc(name)}"</strong>?</p>
+        <p style="font-size:13.5px;color:var(--muted)">This category currently has 0 products and can be safely deleted.</p>
+      </div>
+      <div class="admin-modal-footer">
+        <button class="btn btn-outline" id="btn-cancel-del-cat">Cancel</button>
+        <button class="btn btn-danger" id="btn-confirm-cat-action">
+          <i data-lucide="trash-2"></i> Delete Category
+        </button>
+      </div>`;
+
+      overlay.classList.add('show');
+      refreshIcons(modal);
+
+      document.getElementById('del-cat-close-btn').addEventListener('click', () => this.closeModal());
+      document.getElementById('btn-cancel-del-cat').addEventListener('click', () => this.closeModal());
+
+      const confirmBtn = document.getElementById('btn-confirm-cat-action');
+      confirmBtn.addEventListener('click', async () => {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="spinner"></span> Deleting…';
+        try {
+          const res = await Api.adminDeleteCategory(slug, { action: 'delete' });
+          UI.toast(res.message || `Category "${name}" deleted`, 'check-circle-2', 'success');
+          this.closeModal();
+
+          const [updatedCats, prodsRes] = await Promise.all([
+            Api.getCategories({ includeAll: true }),
+            Api.adminGetProducts()
+          ]);
+          this.categoriesCache = updatedCats || [];
+          this.productsCache = prodsRes.products || [];
+          this.loadTabContent();
+        } catch (err) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = '<i data-lucide="trash-2"></i> Delete Category';
+          refreshIcons(confirmBtn);
+          UI.toast(err.message || 'Failed to delete category', 'alert-circle', 'error');
+        }
+      });
+      return;
+    }
+
+    // Category HAS products: show option to permanently delete products or shift them
+    const canShift = otherCategories.length > 0;
+    const defaultAction = canShift ? 'shift' : 'delete';
+
+    modal.innerHTML = `
+    <div class="admin-modal-header">
+      <h3>Delete Category: ${esc(name)}</h3>
+      <button class="icon-btn" id="del-cat-close-btn"><i data-lucide="x"></i></button>
+    </div>
+    <div class="admin-modal-body" style="padding:22px 26px">
+      <div style="background:rgba(209,74,14,0.08);border:1px solid rgba(209,74,14,0.22);border-radius:12px;padding:12px 16px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start">
+        <i data-lucide="alert-triangle" style="width:20px;height:20px;color:var(--accent);flex-shrink:0;margin-top:2px"></i>
+        <div style="font-size:13.5px;line-height:1.5">
+          Category <strong>"${esc(name)}"</strong> currently contains <strong>${count} product(s)</strong>.
+          <br>Please select what should happen to these products:
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${canShift ? `
+          <label class="cat-delete-option ${defaultAction === 'shift' ? 'active' : ''}" id="opt-shift-card">
+            <input type="radio" name="cat-del-action" value="shift" ${defaultAction === 'shift' ? 'checked' : ''}>
+            <div>
+              <div class="cat-del-title"><i data-lucide="arrow-right-left"></i> Shift Products to Another Category</div>
+              <div class="cat-del-desc">Keep all ${count} product(s) safe by moving them into another category before deleting "${esc(name)}".</div>
+            </div>
+          </label>
+        ` : `
+          <div style="font-size:13px;color:var(--muted);padding:8px 4px">
+            <em>(No other categories exist to shift products into. Create another category first if you want to keep these products.)</em>
+          </div>
+        `}
+
+        <label class="cat-delete-option ${defaultAction === 'delete' ? 'active' : ''}" id="opt-delete-card">
+          <input type="radio" name="cat-del-action" value="delete" ${defaultAction === 'delete' ? 'checked' : ''}>
+          <div>
+            <div class="cat-del-title danger"><i data-lucide="trash-2"></i> Permanently Delete Products</div>
+            <div class="cat-del-desc">Permanently remove all ${count} product(s) and their reviews from your database.</div>
+          </div>
+        </label>
+      </div>
+
+      ${canShift ? `
+        <div id="shift-target-container" style="margin-top:16px;background:var(--paper-deep);padding:14px;border-radius:10px;border:1px solid var(--line-2);display:${defaultAction === 'shift' ? 'block' : 'none'}">
+          <label for="shift-target-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:var(--ink)">
+            Select Destination Category for the ${count} product(s):
+          </label>
+          <select id="shift-target-select" style="width:100%;height:40px;border:1px solid var(--line-2);border-radius:8px;padding:0 12px;font-size:14px;background:var(--surface)">
+            ${otherCategories.map(c => `
+              <option value="${c.slug}">${esc(c.name)} (${c.count || 0} products)</option>
+            `).join('')}
+          </select>
+        </div>
+      ` : ''}
+    </div>
+    <div class="admin-modal-footer">
+      <button class="btn btn-outline" id="btn-cancel-del-cat">Cancel</button>
+      <button class="btn ${defaultAction === 'shift' ? 'btn-accent' : 'btn-danger'}" id="btn-confirm-cat-action">
+        ${defaultAction === 'shift' 
+          ? '<i data-lucide="arrow-right-left"></i> Shift Products &amp; Delete Category'
+          : '<i data-lucide="trash-2"></i> Permanently Delete Category &amp; Products'}
+      </button>
+    </div>`;
+
+    overlay.classList.add('show');
+    refreshIcons(modal);
+
+    document.getElementById('del-cat-close-btn').addEventListener('click', () => this.closeModal());
+    document.getElementById('btn-cancel-del-cat').addEventListener('click', () => this.closeModal());
+
+    const shiftCard = document.getElementById('opt-shift-card');
+    const deleteCard = document.getElementById('opt-delete-card');
+    const targetContainer = document.getElementById('shift-target-container');
+    const confirmBtn = document.getElementById('btn-confirm-cat-action');
+
+    const updateActionUI = (action) => {
+      if (action === 'shift') {
+        shiftCard?.classList.add('active');
+        deleteCard?.classList.remove('active');
+        if (targetContainer) targetContainer.style.display = 'block';
+        confirmBtn.className = 'btn btn-accent';
+        confirmBtn.innerHTML = '<i data-lucide="arrow-right-left"></i> Shift Products &amp; Delete Category';
+      } else {
+        shiftCard?.classList.remove('active');
+        deleteCard?.classList.add('active');
+        if (targetContainer) targetContainer.style.display = 'none';
+        confirmBtn.className = 'btn btn-danger';
+        confirmBtn.innerHTML = '<i data-lucide="trash-2"></i> Permanently Delete Category &amp; Products';
+      }
+      refreshIcons(confirmBtn);
+    };
+
+    modal.querySelectorAll('input[name="cat-del-action"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        updateActionUI(e.target.value);
+      });
+    });
+
+    confirmBtn.addEventListener('click', async () => {
+      const selectedRadio = modal.querySelector('input[name="cat-del-action"]:checked');
+      const action = selectedRadio ? selectedRadio.value : 'delete';
+      let targetCategorySlug = null;
+
+      if (action === 'shift') {
+        const targetSelect = document.getElementById('shift-target-select');
+        targetCategorySlug = targetSelect ? targetSelect.value : null;
+        if (!targetCategorySlug) {
+          UI.toast('Please select a destination category to shift products to.', 'alert-circle', 'error');
+          return;
+        }
+      }
+
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<span class="spinner"></span> Processing…';
+
+      try {
+        const res = await Api.adminDeleteCategory(slug, { action, targetCategorySlug });
+        UI.toast(res.message || 'Category deleted successfully', 'check-circle-2', 'success');
+        this.closeModal();
+
+        const [updatedCats, prodsRes] = await Promise.all([
+          Api.getCategories({ includeAll: true }),
+          Api.adminGetProducts()
+        ]);
+        this.categoriesCache = updatedCats || [];
+        this.productsCache = prodsRes.products || [];
+        this.loadTabContent();
+      } catch (err) {
+        confirmBtn.disabled = false;
+        updateActionUI(action);
+        UI.toast(err.message || 'Failed to delete category', 'alert-circle', 'error');
+      }
+    });
   },
 
   // -------------------------------------------------------------
@@ -1101,11 +1574,11 @@ const AdminUI = {
   // TAB 5: Theme & Website Settings
   // -------------------------------------------------------------
   async renderTabSettings(container) {
-    const [s, productsRes] = await Promise.all([
+    const [s, prodsRes] = await Promise.all([
       Api.getSettings(),
-      Api.getProducts({ limit: 100 }).catch(() => ({ products: [] }))
+      Api.adminGetProducts().catch(() => Api.getProducts({ limit: 200 }).catch(() => []))
     ]);
-    const allProducts = productsRes?.products || [];
+    const allProducts = Array.isArray(prodsRes) ? prodsRes : (prodsRes?.products || []);
     const currentAdmin = Api.getAdminUser() || { name: 'Admin', email: 'admin@rollpoint.pk' };
 
     container.innerHTML = `
@@ -1178,7 +1651,7 @@ const AdminUI = {
                     <option value="">-- No specific product (Links to All Products) --</option>
                     ${allProducts.map(p => `
                       <option value="${p.slug}" ${s.heroProductSlug === p.slug ? 'selected' : ''}>
-                        ${esc(p.name)} (${formatPrice(p.price)})
+                        ${esc(p.name)} (${typeof formatPrice === 'function' ? formatPrice(p.price) : 'Rs. ' + p.price})
                       </option>
                     `).join('')}
                   </select>
@@ -1420,6 +1893,20 @@ const AdminUI = {
     // "Use Product's Image" quick button helper
     const btnUseProdImg = document.getElementById('btn-use-prod-img');
     const heroProductSelect = document.getElementById('st-hero-product');
+    if (heroProductSelect && heroImgInput && heroPreview) {
+      heroProductSelect.addEventListener('change', () => {
+        const selectedSlug = heroProductSelect.value;
+        if (!selectedSlug) return;
+        const prod = allProducts.find(p => p.slug === selectedSlug);
+        if (prod && prod.images && prod.images.length > 0) {
+          if (!heroImgInput.value || heroImgInput.value.includes('picsum.photos')) {
+            heroImgInput.value = prod.images[0];
+            heroPreview.src = prod.images[0];
+          }
+        }
+      });
+    }
+
     if (btnUseProdImg && heroProductSelect && heroImgInput && heroPreview) {
       btnUseProdImg.addEventListener('click', () => {
         const selectedSlug = heroProductSelect.value;

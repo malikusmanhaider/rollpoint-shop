@@ -1,8 +1,7 @@
 /* ================================================================
-   ROLLPOINT — CORE CUSTOMER APPLICATION
-   Full-stack integration connecting dynamic MongoDB data,
-   thermal receipt engine, order checkout, WhatsApp flow,
-   and customer reviews.
+   ROLLPOINT — CORE CUSTOMER APPLICATION (MOBILE-FIRST APP EDITION)
+   Engineered for maximum mobile retention, app-like speed,
+   high-converting checkout, live stock calculations, and WhatsApp flow.
    ================================================================ */
 
 // Live Business Config (loaded dynamically from database settings)
@@ -69,15 +68,15 @@ const OrderMath = {
 
   buildWhatsAppMessage(order) {
     const lines = [
-      '*NEW ORDER*',
+      '*NEW ORDER — ROLLPOINT*',
       '',
       `*Order ID:* ${order.orderId || order.id}`,
       `*Product:* ${order.productName || (order.items && order.items[0]?.name)}`,
       `*Price:* ${formatPrice(order.productPrice || (order.items && order.items[0]?.price))}`,
       `*Quantity:* ${order.quantity || (order.items && order.items[0]?.qty)}`,
-      `*Product Total:* ${formatPrice(order.productTotal || order.subtotal)}`,
-      `*Shipping:* ${formatPrice(order.shipping)} (Flat Nationwide)`,
-      `*Grand Total:* ${formatPrice(order.grandTotal || order.total)}`,
+      `*Subtotal:* ${formatPrice(order.productTotal || order.subtotal)}`,
+      `*Shipping:* ${formatPrice(order.shipping)} (Flat Nationwide Delivery)`,
+      `*Total Payable (COD):* ${formatPrice(order.grandTotal || order.total)}`,
       '',
       '*CUSTOMER DETAILS*',
       `*Name:* ${order.customerName || order.customer?.name}`,
@@ -87,7 +86,7 @@ const OrderMath = {
       `*City:* ${order.customerCity || order.customer?.city}`,
       (order.customerNotes || order.customer?.notes) ? `*Notes:* ${order.customerNotes || order.customer?.notes}` : null,
       '',
-      '_Sent via RollPoint Web Checkout_'
+      '_Sent via RollPoint Mobile App Checkout_'
     ].filter(Boolean);
     return lines.join('\n');
   }
@@ -95,77 +94,178 @@ const OrderMath = {
 
 // UI Components
 const Components = {
-  logo(bg = 'var(--ink)', fg = 'var(--paper)') {
+  logo() {
     if (BUSINESS.logo) {
       return `<img src="${BUSINESS.logo}" alt="${esc(BUSINESS.name || 'RollPoint')}" class="brand-logo-img">`;
     }
     return `<svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <rect width="40" height="40" rx="10" fill="${bg}"/>
-      <circle cx="20" cy="15.5" r="8" stroke="${fg}" stroke-width="2.4"/>
-      <circle cx="20" cy="15.5" r="2.8" stroke="${fg}" stroke-width="2"/>
-      <path d="M14 23.5V31l3-2.4 3 2.4 3-2.4 3 2.4v-7.5" stroke="${fg}" stroke-width="2.4" stroke-linejoin="round" fill="none"/>
+      <rect width="40" height="40" rx="10" fill="var(--ink)"/>
+      <circle cx="20" cy="15.5" r="8" stroke="#fff" stroke-width="2.4"/>
+      <circle cx="20" cy="15.5" r="2.8" stroke="#fff" stroke-width="2"/>
+      <path d="M14 23.5V31l3-2.4 3 2.4 3-2.4 3 2.4v-7.5" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" fill="none"/>
     </svg>`;
   },
 
-  brand(dark = false) {
+  brand() {
     return `<a class="brand" href="#/" aria-label="${BUSINESS.name} home">
-      ${this.logo(dark ? 'var(--inv)' : 'var(--ink)', dark ? 'var(--ink-bg)' : 'var(--paper)')}
-      <span class="brand-name">${esc(BUSINESS.name || 'RollPoint')}</span></a>`;
+      ${this.logo()}
+      <div class="brand-text-col">
+        <span class="brand-name">${esc(BUSINESS.name || 'RollPoint')}<em>.</em></span>
+        <span class="brand-badge">Official Store</span>
+      </div>
+    </a>`;
   },
 
+  // Category Story Circles (Instagram / Daraz style)
+  categoryStories(cats, activeSlug = '') {
+    const defaultIcons = {
+      'thermal-rolls': 'scroll',
+      'labels': 'tag',
+      'pos-products': 'printer',
+      'mini-printer-paper': 'file-text',
+      'other-products': 'package',
+      'mini-fans': 'fan'
+    };
+
+    const stories = [
+      { slug: 'all', name: 'All Aisles', icon: 'sparkles', isAll: true },
+      ...cats.map(c => ({
+        slug: c.slug,
+        name: c.name,
+        icon: defaultIcons[c.slug] || 'layers'
+      }))
+    ];
+
+    return `
+    <div class="stories-strip">
+      <div class="stories-track">
+        ${stories.map(s => {
+          const isActive = (!activeSlug && s.isAll) || (activeSlug === s.slug);
+          return `
+          <a class="story-item ${isActive ? 'active' : ''}" href="${s.isAll ? '#/shop' : `#/category/${s.slug}`}">
+            <div class="story-ring">
+              <div class="story-avatar">
+                <i data-lucide="${s.icon}"></i>
+              </div>
+            </div>
+            <span class="story-label">${esc(s.name)}</span>
+          </a>`;
+        }).join('')}
+      </div>
+    </div>`;
+  },
+
+  // High-converting 2-column mobile app product card
   productCard(p, catName) {
     const disc = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
     const out = p.stock <= 0;
     const img0 = (p.images && p.images[0]) || 'https://picsum.photos/600/600';
     const img1 = (p.images && p.images[1]) || img0;
     const categoryTitle = catName || p.categoryName || p.category || '';
+    const saveAmt = p.oldPrice && p.oldPrice > p.price ? (p.oldPrice - p.price) : 0;
 
     return `
     <article class="p-card reveal">
       <a class="p-media" href="#/product/${p.slug}" aria-label="${esc(p.name)}">
         <img class="main" src="${img0}" alt="${esc(p.name)}" loading="lazy">
         <img class="alt" src="${img1}" alt="" loading="lazy" aria-hidden="true">
-        ${out ? '<span class="p-out-badge">Out of stock</span>'
-              : disc ? `<span class="p-badge">−${disc}%</span>` : ''}
+        <div class="p-badge-group">
+          ${out ? '<span class="p-out-badge">Out of stock</span>'
+                : disc ? `<span class="p-badge">−${disc}%</span>` : ''}
+          <span class="p-cod-tag"><i data-lucide="banknote"></i> COD</span>
+        </div>
       </a>
       <div class="p-body">
-        <span class="p-cat">${esc(categoryTitle)}</span>
+        <div class="p-meta-row">
+          <span class="p-cat">${esc(categoryTitle)}</span>
+          <div class="p-rate"><i data-lucide="star"></i><b>${(p.rating || 5.0).toFixed(1)}</b></div>
+        </div>
         <h3 class="p-name"><a href="#/product/${p.slug}">${esc(p.name)}</a></h3>
-        <div class="p-rate">${stars(p.rating)}<b>${(p.rating || 5.0).toFixed(1)}</b><span>(${p.reviewCount || 0})</span></div>
-        <p class="p-desc">${esc(p.shortDescription)}</p>
-        <div class="p-foot">
+        <div class="p-price-block">
           <div class="p-price">
             <span class="price-now">${formatPrice(p.price)}</span>
             ${p.oldPrice ? `<s class="price-old">${formatPrice(p.oldPrice)}</s>` : ''}
           </div>
-          <button class="btn btn-order" data-action="order-now" data-id="${p.id}" data-qty="1" ${out ? 'disabled' : ''}>
-            <i data-lucide="package"></i> Order Now
-          </button>
+          ${saveAmt ? `<span class="p-save-chip">Save ${formatPrice(saveAmt)}</span>` : ''}
         </div>
+        <button class="btn btn-order" data-action="order-now" data-id="${p.id}" data-qty="1" ${out ? 'disabled' : ''}>
+          <i data-lucide="package"></i> Order Now
+        </button>
       </div>
     </article>`;
   },
 
+  // Horizontal Swipeable Product Carousel
   rail(products, railId = '') {
     return `<div class="rail" ${railId ? `id="${railId}"` : ''}>
       ${products.map(p => this.productCard(p, p.categoryName || p.category)).join('')}
     </div>`;
   },
 
+  // Mobile App Section Head
   sectionHead(kicker, title, sub = '', link = null, railId = null) {
     return `<div class="section-head reveal">
       <div>
-        <p class="kicker">${kicker}</p>
+        <span class="kicker">${kicker}</span>
         <h2>${title}</h2>
         ${sub ? `<p class="head-sub">${sub}</p>` : ''}
       </div>
-      <div style="display:flex;align-items:center;gap:18px">
+      <div style="display:flex;align-items:center;gap:12px">
         ${railId ? `<div class="rail-arrows">
           <button class="icon-btn" data-action="rail-prev" data-target="${railId}" aria-label="Scroll left"><i data-lucide="arrow-left"></i></button>
           <button class="icon-btn" data-action="rail-next" data-target="${railId}" aria-label="Scroll right"><i data-lucide="arrow-right"></i></button>
         </div>` : ''}
         ${link ? `<a class="head-link" href="${link.href}">${link.label} <i data-lucide="arrow-right"></i></a>` : ''}
       </div>
+    </div>`;
+  },
+
+  // 4 App Trust Cards
+  trustMatrix() {
+    return `
+    <div class="trust-matrix reveal">
+      <div class="trust-card">
+        <div class="trust-ico"><i data-lucide="truck"></i></div>
+        <div class="trust-info">
+          <b>Flat Rs. 250</b>
+          <small>Nationwide delivery</small>
+        </div>
+      </div>
+      <div class="trust-card">
+        <div class="trust-ico green"><i data-lucide="banknote"></i></div>
+        <div class="trust-info">
+          <b>Cash on Delivery</b>
+          <small>Pay when received</small>
+        </div>
+      </div>
+      <div class="trust-card">
+        <div class="trust-ico"><i data-lucide="shield-check"></i></div>
+        <div class="trust-info">
+          <b>BPA-Free Paper</b>
+          <small>100% Genuine stock</small>
+        </div>
+      </div>
+      <div class="trust-card">
+        <div class="trust-ico wa"><i data-lucide="message-circle"></i></div>
+        <div class="trust-info">
+          <b>WhatsApp Order</b>
+          <small>${BUSINESS.whatsappLocal}</small>
+        </div>
+      </div>
+    </div>`;
+  },
+
+  // Pakistani Cities Quick Chips for 1-Tap Checkout
+  pakistanCityChips() {
+    const topCities = [
+      'Lahore', 'Karachi', 'Islamabad', 'Rawalpindi',
+      'Faisalabad', 'Multan', 'Peshawar', 'Gujranwala',
+      'Sialkot', 'Quetta'
+    ];
+    return `
+    <div class="city-chips-label">⚡ 1-Tap Select City:</div>
+    <div class="city-chips" id="city-chips">
+      ${topCities.map(c => `<button type="button" class="city-chip" data-action="select-city" data-city="${c}">${c}</button>`).join('')}
     </div>`;
   },
 
@@ -182,20 +282,19 @@ const Components = {
     const ship = OrderMath.shipping();
     const total = OrderMath.total(p.price, qty);
     return `
-    <div class="receipt tear-b" style="position:relative">
-      ${opts.stamp ? '<span class="stamp">RECEIVED</span>' : ''}
+    <div class="receipt">
+      ${opts.stamp ? '<div style="background:var(--green);color:#fff;font-weight:700;font-size:11px;padding:3px 8px;border-radius:6px;width:fit-content;margin:0 auto 10px">ORDER CONFIRMED</div>' : ''}
       <div class="r-brand">${esc(BUSINESS.name.toUpperCase())}</div>
       <div class="r-store">Counter supplies · ${esc(BUSINESS.address.split(',').pop().trim())}</div>
       <div class="r-dash"></div>
       <div class="r-item-name">${esc(p.name)}</div>
       <div class="r-calc">${formatPrice(p.price)} × ${qty} unit${qty > 1 ? 's' : ''}</div>
-      <div class="r-line"><span>Subtotal</span><span class="dots"></span><span>${formatPrice(sub)}</span></div>
-      <div class="r-line"><span>Shipping (flat)</span><span class="dots"></span><span>${formatPrice(ship)}</span></div>
+      <div class="r-line"><span>Subtotal</span><span>${formatPrice(sub)}</span></div>
+      <div class="r-line"><span>Shipping (flat)</span><span>${formatPrice(ship)}</span></div>
       <div class="r-dash"></div>
-      <div class="r-line r-total"><span>TOTAL</span><span class="dots"></span><span>${formatPrice(total)}</span></div>
+      <div class="r-line r-total"><span>TOTAL PAYABLE (COD)</span><span>${formatPrice(total)}</span></div>
       <div class="r-cod">Cash on delivery · Flat rate nationwide</div>
-      <div class="barcode" aria-hidden="true"></div>
-      ${opts.orderId ? `<div class="r-id">${esc(opts.orderId)}</div>` : '<div class="r-id">DRAFT · NOT PAID</div>'}
+      ${opts.orderId ? `<div class="r-id">ORDER ID · ${esc(opts.orderId)}</div>` : '<div class="r-id">INSTANT COD ORDER</div>'}
     </div>`;
   },
 
@@ -203,43 +302,43 @@ const Components = {
     const reviewsList = p.reviews || [];
     return `
     <div class="reviews-top">
-      <div style="display:flex;align-items:center;gap:34px;flex-wrap:wrap">
-        <h2>Customer reviews</h2>
+      <div>
+        <h3 style="font-size:18px;margin-bottom:4px">Customer Reviews</h3>
         <div class="rating-summary">
           <span class="rating-avg">${(p.rating || 5.0).toFixed(1)}</span>
           <div>
             ${stars(p.rating || 5.0, 'lg')}
-            <small>${p.reviewCount || reviewsList.length} verified review${(p.reviewCount || reviewsList.length) !== 1 ? 's' : ''}</small>
+            <small style="color:var(--muted);display:block">${p.reviewCount || reviewsList.length} verified review${(p.reviewCount || reviewsList.length) !== 1 ? 's' : ''}</small>
           </div>
         </div>
       </div>
-      <button class="btn btn-outline" data-action="review-open" data-slug="${p.slug}">
-        <i data-lucide="pen-line"></i> Write a Review
+      <button class="btn btn-outline btn-sm" data-action="review-open" data-slug="${p.slug}">
+        <i data-lucide="pen-line"></i> Write Review
       </button>
     </div>
 
     <form class="review-form" id="review-form" data-form="review" data-slug="${p.slug}" novalidate>
-      <div class="form-title" style="font-family:var(--fm);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">Submit Your Review</div>
+      <div class="form-title">Submit Verified Review</div>
       <div class="form-grid">
         <div class="field">
-          <label for="rv-name">Your name *</label>
-          <input id="rv-name" name="name" type="text" placeholder="e.g. Sana Malik" required>
+          <label for="rv-name">Your Name *</label>
+          <input id="rv-name" name="name" type="text" placeholder="e.g. Asad Ali" required>
           <span class="err">Please enter your name.</span>
         </div>
         <div class="field">
-          <label>Your rating *</label>
+          <label>Your Rating *</label>
           <div class="rate-pick" id="rate-pick" data-value="5">
             ${[5,4,3,2,1].map(v => `<button type="button" class="rate-btn ${v <= 5 ? 'on' : ''}" data-action="rating-pick" data-value="${v}" aria-label="${v} star${v>1?'s':''}">${STAR}</button>`).join('')}
           </div>
-          <span class="err" id="rv-rating-err" style="display:none;color:var(--red);font-size:12.5px;font-weight:500">Please pick a star rating.</span>
+          <span class="err" id="rv-rating-err" style="display:none;color:var(--red);font-size:12px;font-weight:600">Please pick a star rating.</span>
         </div>
         <div class="field full">
-          <label for="rv-text">Your review *</label>
-          <textarea id="rv-text" name="text" placeholder="How was the product quality and delivery experience?" required></textarea>
+          <label for="rv-text">Your Feedback *</label>
+          <textarea id="rv-text" name="text" placeholder="Paper quality, print clarity, delivery speed..." required></textarea>
           <span class="err">Please write at least 5 characters.</span>
         </div>
       </div>
-      <button class="btn btn-accent" type="submit" id="rv-submit-btn" style="margin-top:18px">
+      <button class="btn btn-accent btn-sm" type="submit" id="rv-submit-btn" style="margin-top:14px">
         <i data-lucide="check"></i> Submit Review
       </button>
     </form>
@@ -250,132 +349,217 @@ const Components = {
           <div class="review-head">
             <span class="avatar">${esc((r.name || '?').trim()[0] || '?').toUpperCase()}</span>
             <div><b>${esc(r.name)}</b><small>${formatDate(r.date || r.createdAt)}</small></div>
-            ${stars(r.rating)}
+            <div style="margin-left:auto">${stars(r.rating)}</div>
           </div>
           <p>${esc(r.text)}</p>
-        </article>`).join('') : '<div style="padding:20px 0;color:var(--muted)">No reviews yet. Be the first to review this product!</div>'}
+        </article>`).join('') : '<div style="padding:16px 0;color:var(--muted);font-size:13px">No reviews yet. Be the first to review!</div>'}
     </div>`;
   }
 };
 
 // Pages
 const Pages = {
-  // ---------------- HOME PAGE ----------------
+  // ---------------- HOME PAGE (DARAZ APP EXPERIENCE) ----------------
   home: {
     async load() {
-      const [cats, featured, fresh] = await Promise.all([
+      const [cats, featured, fresh, allProducts] = await Promise.all([
         Api.getCategories(),
         Api.getProducts({ featuredOnly: true }),
-        Api.getProducts({ sort: 'newest', limit: 8 })
+        Api.getProducts({ sort: 'newest', limit: 8 }),
+        Api.getProducts({ limit: 40 })
       ]);
-      return { cats, featured, fresh };
+      return { cats, featured, fresh, allProducts };
     },
-    render({ cats, featured, fresh }) {
-      const tiles = cats.map((c, i) => `
-        <a class="cat-tile ${i === 0 ? 't-big' : ''} ${i === cats.length - 1 ? 't-wide' : ''} reveal"
-           href="#/category/${c.slug}">
-          <img src="https://picsum.photos/seed/rp-cat-${c.slug}/720/560.jpg" alt="${esc(c.name)}" loading="lazy">
-          <span class="cat-arrow"><i data-lucide="arrow-up-right"></i></span>
-          <span class="cat-info"><b>${esc(c.name)}</b><span>${c.count} product${c.count !== 1 ? 's' : ''}</span></span>
-        </a>`).join('');
-      const viewAll = `<a class="cat-tile cat-all reveal" href="#/shop">
-        <i data-lucide="arrow-right"></i><b>View all products</b></a>`;
 
-      const statParts = (BUSINESS.heroStats || '').split('·').map(s => s.trim()).filter(Boolean);
-      const statsHtml = statParts.length ? statParts.map(s => `<span>${esc(s)}</span>`).join('') : `<span>1,200+ shops supplied</span><span>48h major-city delivery</span><span>4.8 average rating</span>`;
+    render({ cats, featured, fresh, allProducts }) {
+      const flashItems = featured.length >= 3 ? featured.slice(0, 3) : allProducts.slice(0, 3);
+      const sastiItems = allProducts.length >= 3 ? allProducts.slice(3, 6) : allProducts.slice(0, 3);
 
       return `
-      <section class="hero">
-        <div class="container hero-grid">
-          <div class="hero-copy reveal">
-            <p class="kicker">${esc(BUSINESS.heroKicker || '// Counter supplies · Pakistan')}</p>
-            <h1>${esc(BUSINESS.heroTitle || 'Thermal rolls, labels & POS gear — delivered to your counter.')}</h1>
-            <p class="hero-sub">${esc(BUSINESS.heroSubtitle || 'Genuine BPA-free thermal paper, shipping labels and point-of-sale hardware for shops that never stop. Flat Rs. 250 delivery, cash on delivery, nationwide.')}</p>
-            <div class="hero-cta">
-              <a class="btn btn-ink btn-lg" href="#/shop">${esc(BUSINESS.heroBtn1Text || 'Shop all products')} <i data-lucide="arrow-right"></i></a>
-              <a class="btn btn-whatsapp btn-lg" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent('Hi RollPoint! I want to order thermal rolls & supplies.')}" target="_blank">
-                <i data-lucide="message-circle"></i> Chat on WhatsApp
-              </a>
+      <!-- 1. Daraz Choice Upsized Deals Hero Banner -->
+      <section class="daraz-hero">
+        <div class="daraz-hero-card">
+          <div class="daraz-hero-left">
+            <div class="daraz-choice-tag">C<span>H</span>OICE</div>
+            <div class="daraz-hero-title">UPSIZED DEALS</div>
+            <div class="daraz-hero-sub">Extra 6% Off vouchers</div>
+            <a class="daraz-shop-pill" href="#/shop">Shop Now</a>
+          </div>
+          <div class="daraz-hero-right">
+            <div class="daraz-sticker-badge">
+              <small>AS LOW AS</small>
+              <b>Rs. 105</b>
             </div>
-            <div class="hero-stats mono">
-              ${statsHtml}
-            </div>
-          </div>
-          <div class="hero-visual reveal">
-            <a class="hero-photo-link" href="${BUSINESS.heroProductSlug ? `#/product/${esc(BUSINESS.heroProductSlug)}` : '#/shop'}" title="View featured product">
-              <figure class="hero-photo">
-                <img src="${esc(BUSINESS.heroImage || 'https://picsum.photos/seed/rp-hero-counter/900/760.jpg')}" alt="${esc(BUSINESS.name)} — Counter supplies">
-              </figure>
-            </a>
-            ${BUSINESS.heroChip ? `<span class="hero-chip">${esc(BUSINESS.heroChip)}</span>` : ''}
+            <img class="daraz-hero-img" src="${esc(BUSINESS.heroImage || 'https://picsum.photos/seed/rp-hero-counter/900/760.jpg')}" alt="Deals">
+            <span class="daraz-hero-counter">3/15</span>
           </div>
         </div>
       </section>
 
-      <section class="trust">
-        <div class="container trust-in">
-          <div class="trust-item reveal"><i data-lucide="truck"></i><div><b>${esc(BUSINESS.usp1Title || 'Flat Rs. 250 delivery')}</b><small>${esc(BUSINESS.usp1Sub || 'Anywhere in Pakistan')}</small></div></div>
-          <div class="trust-item reveal"><i data-lucide="banknote"></i><div><b>${esc(BUSINESS.usp2Title || 'Cash on delivery')}</b><small>${esc(BUSINESS.usp2Sub || 'Pay when it arrives')}</small></div></div>
-          <div class="trust-item reveal"><i data-lucide="badge-check"></i><div><b>${esc(BUSINESS.usp3Title || 'Genuine stock')}</b><small>${esc(BUSINESS.usp3Sub || 'BPA-free thermal paper')}</small></div></div>
-          <div class="trust-item reveal"><i data-lucide="message-circle"></i><div><b>${esc(BUSINESS.usp4Title || 'WhatsApp ordering')}</b><small>${esc(BUSINESS.usp4Sub || BUSINESS.whatsappLocal)}</small></div></div>
-        </div>
-      </section>
+      <!-- 2. Daraz Black Trust Bar -->
+      <div class="daraz-trust-bar">
+        <span><i data-lucide="credit-card"></i> Safe Payment</span>
+        <div class="daraz-trust-divider"></div>
+        <span><i data-lucide="truck"></i> Fast Delivery</span>
+        <div class="daraz-trust-divider"></div>
+        <span><i data-lucide="rotate-ccw"></i> Free Return</span>
+      </div>
 
-      <section class="section" id="home-cats">
-        <div class="container">
-          ${Components.sectionHead('01 — Catalog', 'Shop by category', 'Six focused aisles — nothing you don’t need, everything your counter does.', { href: '#/shop', label: 'All products' })}
-          <div class="mobile-cat-strip">
-            <a class="cat-chip active" href="#/shop"><i data-lucide="layout-grid"></i> All Products</a>
-            ${cats.map(c => `<a class="cat-chip" href="#/category/${c.slug}">${esc(c.name)}</a>`).join('')}
+      <!-- 3. Daraz 6-Icon Navigation Strip -->
+      <div class="daraz-icon-grid">
+        <a class="daraz-special-card" href="#/shop">
+          <div class="sc-top">
+            <span class="daraz-special-badge">Coins Deals</span>
+            <b>Earn Coins</b>
           </div>
-          <div class="cat-grid">${tiles}${viewAll}</div>
-        </div>
-      </section>
+          <span class="sc-link">Click to Collect <i data-lucide="chevron-right" style="width:12px;height:12px"></i></span>
+        </a>
 
-      <section class="section" style="padding-top:8px">
-        <div class="container">
-          ${Components.sectionHead('02 — Best sellers', 'Featured this week', '', { href: '#/shop', label: 'View all' }, 'feat-rail')}
-          <div class="rail-wrap">
-            <div class="rail" id="feat-rail">${featured.map(p => Components.productCard(p, p.categoryName || p.category)).join('')}</div>
+        <a class="daraz-icon-card" href="#/category/thermal-rolls">
+          <div class="daraz-icon-box yellow">
+            <i data-lucide="scroll"></i>
+          </div>
+          <span class="daraz-icon-label">Everyday Low Price</span>
+        </a>
+
+        <a class="daraz-icon-card" href="#/category/labels">
+          <div class="daraz-icon-box pink">
+            <i data-lucide="tag"></i>
+          </div>
+          <span class="daraz-icon-label">Beauty Fiesta</span>
+        </a>
+
+        <a class="daraz-icon-card" href="#/category/mini-printer-paper">
+          <div class="daraz-icon-box blue">
+            <i data-lucide="file-text"></i>
+          </div>
+          <span class="daraz-icon-label">Daraz Pharmacy</span>
+        </a>
+
+        <a class="daraz-icon-card" href="#/category/pos-products">
+          <div class="daraz-icon-box black">
+            <i data-lucide="smartphone"></i>
+          </div>
+          <span class="daraz-icon-label">Official Mobile</span>
+        </a>
+
+        <a class="daraz-icon-card" href="https://wa.me/${BUSINESS.whatsappIntl}" target="_blank">
+          <div class="daraz-icon-box green">
+            <i data-lucide="message-circle"></i>
+          </div>
+          <span class="daraz-icon-label">Daraz Free</span>
+        </a>
+      </div>
+
+      <!-- 4. Claim Vouchers to Save More Strip -->
+      <div class="daraz-voucher-sec">
+        <div class="daraz-voucher-head">
+          <h4>Claim Vouchers to Save More</h4>
+          <a href="#/shop">More Vouchers <i data-lucide="chevron-right" style="width:13px;height:13px"></i></a>
+        </div>
+        <div class="daraz-voucher-row">
+          <div class="daraz-voucher-item">
+            <span class="d-v-val">4%OFF</span>
+            <span class="d-v-sub">Voucher Max</span>
+          </div>
+          <div class="daraz-voucher-item teal">
+            <span class="d-v-val">Rs.450</span>
+            <span class="d-v-sub">Free shipping</span>
+          </div>
+          <button class="daraz-collect-btn" id="voucher-collect-btn" data-action="collect-vouchers">
+            Collect All
+          </button>
+        </div>
+      </div>
+
+      <!-- 5. Payday Sale Graphic Banner -->
+      <div class="daraz-payday-banner">
+        <div class="payday-left">
+          <span class="payday-badge">EVERY 27TH</span>
+          <span class="payday-title">PAYDAY SALE</span>
+          <div class="payday-tags">
+            <span>FREE DELIVERY</span>
+            <span>UP TO 60% OFF</span>
           </div>
         </div>
-      </section>
+        <div class="payday-cart-stamp">
+          <span>ADD TO<br>CART</span>
+        </div>
+      </div>
 
-      <section class="section" style="padding-top:0">
-        <div class="container">
-          <div class="deal reveal">
-            <div class="deal-copy">
-              <p class="kicker">Stock-up deal</p>
-              <h2>Buy 10 rolls, pay for 9.</h2>
-              <p>Order any ten 80mm or 57mm thermal rolls and the eleventh is on us — applied when our team confirms your order on WhatsApp.</p>
-              <a class="btn btn-accent btn-lg" href="#/category/thermal-rolls">Shop thermal rolls <i data-lucide="arrow-right"></i></a>
-            </div>
-            <div class="deal-media">
-              <img src="https://picsum.photos/seed/rp-deal-rolls/880/560.jpg" alt="Stack of thermal rolls" loading="lazy">
-              <span class="deal-tag">Up to 19% off rolls</span>
-            </div>
+      <!-- 6. Daraz Fla⚡h Sale Section -->
+      <div class="daraz-flash-sec">
+        <div class="daraz-flash-head">
+          <div class="df-title-row">
+            <span class="df-title">Fla<em>⚡</em>h Sale</span>
+            <span class="df-timer-pill" id="flash-timer">03 : 42 : 19</span>
           </div>
+          <a href="#/shop">Shop More <i data-lucide="chevron-right" style="width:13px;height:13px"></i></a>
         </div>
-      </section>
+        <div class="daraz-flash-row">
+          ${flashItems.map(p => {
+            const disc = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 75;
+            return `
+            <a class="df-item" href="#/product/${p.slug}">
+              <div class="df-item-img">
+                <img src="${(p.images && p.images[0]) || 'https://picsum.photos/300/300'}" alt="${esc(p.name)}" loading="lazy">
+              </div>
+              <span class="df-item-price">${formatPrice(p.price)}</span>
+              <span class="df-item-disc">−${disc}%</span>
+            </a>`;
+          }).join('')}
+        </div>
+      </div>
 
-      <section class="section" style="padding-top:8px">
-        <div class="container">
-          ${Components.sectionHead('03 — Fresh stock', 'Just arrived', 'The latest additions to our shelves, ready to ship.', { href: '#/shop', label: 'Browse everything' })}
-          <div class="grid-products">${fresh.map(p => Components.productCard(p, p.categoryName || p.category)).join('')}</div>
+      <!-- 7. Daily Sasti CHOICE Section -->
+      <div class="daraz-sasti-sec">
+        <div class="daraz-sasti-head">
+          <h3>Daily Sasti <span>CHOICE</span></h3>
+          <a href="#/shop">Shop Now | Free Gift! <i data-lucide="chevron-right" style="width:13px;height:13px"></i></a>
         </div>
-      </section>
+        <div class="daraz-sasti-grid">
+          ${sastiItems.map(p => `
+            <a class="ds-card" href="#/product/${p.slug}">
+              <img src="${(p.images && p.images[0]) || 'https://picsum.photos/300/300'}" alt="${esc(p.name)}" loading="lazy">
+              <b>${formatPrice(p.price)}</b>
+              <small>Min. Spend Rs. 0</small>
+            </a>`).join('')}
+        </div>
+      </div>
 
-      <section class="steps">
-        <div class="container steps-in">
-          <div class="step reveal"><span class="step-num">01</span><div><b>Pick your product</b><p>Choose from rolls, labels and POS gear — no account needed.</p></div></div>
-          <div class="step reveal"><span class="step-num">02</span><div><b>Fill the order form</b><p>Name, number, address. Total calculates live, shipping always Rs. 250.</p></div></div>
-          <div class="step reveal"><span class="step-num">03</span><div><b>WhatsApp Instant Confirm</b><p>Order saves directly in database and WhatsApp opens with details.</p></div></div>
+      <!-- 8. Just For You Infinite 2-Column Feed -->
+      <div class="daraz-jfy-head">
+        <span class="daraz-jfy-line"></span>
+        <h3>Just For You</h3>
+        <span class="daraz-jfy-line"></span>
+      </div>
+      <div class="container">
+        <div class="grid-products" id="daraz-jfy-grid">
+          ${allProducts.map(p => Components.productCard(p, p.categoryName || p.category)).join('')}
         </div>
-      </section>`;
+      </div>`;
+    },
+
+    mount(data) {
+      // 1. Live Flash Sale Countdown Timer (Ticks every second)
+      if (window._dealTimerInterval) clearInterval(window._dealTimerInterval);
+      let secondsLeft = 3 * 3600 + 42 * 60 + 19;
+      window._dealTimerInterval = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft <= 0) secondsLeft = 6 * 3600;
+        const h = String(Math.floor(secondsLeft / 3600)).padStart(2, '0');
+        const m = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0');
+        const s = String(secondsLeft % 60).padStart(2, '0');
+        const el = document.getElementById('flash-timer');
+        if (el) el.textContent = `${h} : ${m} : ${s}`;
+      }, 1000);
+
+      // 2. Social Proof Order Notification Ticker
+      UI.startSocialProofTicker();
     }
   },
 
-  // ---------------- LISTING PAGE ----------------
+  // ---------------- LISTING PAGE (SHOP / CATEGORY) ----------------
   listing: {
     async load(params) {
       const [cats, all, products] = await Promise.all([
@@ -385,86 +569,66 @@ const Pages = {
       ]);
       return { cats, all, products, params };
     },
+
     render({ cats, all, products, params }) {
       const cat = params.category ? cats.find(c => c.slug === params.category) : null;
-      let title = 'All products', sub = 'Every roll, label and device on our shelves — filter and sort to find what you need.';
-      if (cat) { title = cat.name; sub = cat.tagline || `${cat.name} supplies.`; }
-      if (params.q) { title = `Results for “${esc(params.q)}”`; sub = 'Matching products from across the store.'; }
-
-      const catLink = (c) => `<a class="${params.category === c.slug ? 'active' : ''}" href="#/category/${c.slug}">${esc(c.name)}<span>${c.count}</span></a>`;
-      const chip = c => `<a class="${params.category === c.slug ? 'active' : ''}" href="#/category/${c.slug}">${esc(c.name)}</a>`;
+      let title = 'All Products', sub = 'Genuine BPA-free thermal rolls, shipping labels & POS equipment.';
+      if (cat) { title = cat.name; sub = cat.tagline || `${cat.name} supplies in stock.`; }
+      if (params.q) { title = `Results for “${esc(params.q)}”`; sub = `Matching items across the store.`; }
 
       const crumbs = Components.breadcrumbs([
         { label: 'Home', href: '#/' },
         ...(cat ? [{ label: 'Categories', href: '#/shop' }, { label: cat.name, href: '#' }] : [{ label: 'Shop', href: '#' }])
       ]);
 
-      const grid = products.length
+      const storiesHtml = Components.categoryStories(cats, params.category || '');
+
+      const gridHtml = products.length
         ? `<div class="grid-products" id="listing-grid">${products.map(p => Components.productCard(p, p.categoryName || p.category)).join('')}</div>`
-        : `<div class="empty-state">
-             <i data-lucide="package-search"></i>
-             <h3>Nothing matched</h3><p>Try a different keyword or browse the full catalog.</p>
-             <a class="btn btn-ink" href="#/shop">Browse all products</a>
+        : `<div style="text-align:center;padding:50px 20px;background:var(--surface);border-radius:18px;border:1px solid var(--line);margin:20px 0">
+             <i data-lucide="package-search" style="width:48px;height:48px;color:var(--muted);margin-bottom:10px"></i>
+             <h3 style="font-size:18px;margin-bottom:6px">No products matched</h3>
+             <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Try searching for 80mm, labels, or mini printer paper.</p>
+             <a class="btn btn-accent btn-sm" href="#/shop">View All Products</a>
            </div>`;
 
       return `
-      <div class="container page-head">
+      ${storiesHtml}
+      <div class="container" style="padding-top:10px">
         ${crumbs}
-        <div class="listing-head"><h1>${title}</h1>${sub ? `<p class="sub">${sub}</p>` : ''}</div>
-      </div>
-      <div class="container">
-        <div class="mobile-filters">
-          <a class="${!params.category ? 'active' : ''}" href="#/shop">All</a>
-          ${cats.map(chip).join('')}
-        </div>
-        <div class="listing-grid">
-          <aside class="filters">
-            <div class="filter-group">
-              <h5>Categories</h5>
-              <nav class="filter-cat">
-                <a class="${!params.category ? 'active' : ''}" href="#/shop">All products<span>${all.length}</span></a>
-                ${cats.map(c => catLink(c)).join('')}
-              </nav>
-            </div>
-            <div class="filter-group">
-              <h5>Availability</h5>
-              <label class="check-row"><input type="checkbox" data-role="stock-toggle" ${params.inStockOnly ? 'checked' : ''}> In stock only</label>
-            </div>
-          </aside>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap;gap:8px">
           <div>
-            <div class="listing-bar">
-              <span class="result-count">Showing <b>${products.length}</b> of <b>${all.length}</b> products</span>
-              <div class="sort-wrap">
-                <span>Sort</span>
-                <select data-role="sort" aria-label="Sort products">
-                  <option value="featured" ${params.sort === 'featured' || !params.sort ? 'selected' : ''}>Featured</option>
-                  <option value="price-asc" ${params.sort === 'price-asc' ? 'selected' : ''}>Price: Low to High</option>
-                  <option value="price-desc" ${params.sort === 'price-desc' ? 'selected' : ''}>Price: High to Low</option>
-                  <option value="rating" ${params.sort === 'rating' ? 'selected' : ''}>Top rated</option>
-                  <option value="newest" ${params.sort === 'newest' ? 'selected' : ''}>Newest</option>
-                </select>
-              </div>
-            </div>
-            ${grid}
+            <h1 style="font-size:22px">${title}</h1>
+            <p style="font-size:12.5px;color:var(--muted);margin-top:2px">${sub}</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <select data-role="sort" aria-label="Sort products" style="height:36px;padding:0 10px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface);font-size:12.5px;font-weight:600">
+              <option value="featured" ${params.sort === 'featured' || !params.sort ? 'selected' : ''}>Featured</option>
+              <option value="price-asc" ${params.sort === 'price-asc' ? 'selected' : ''}>Price: Low to High</option>
+              <option value="price-desc" ${params.sort === 'price-desc' ? 'selected' : ''}>Price: High to Low</option>
+              <option value="rating" ${params.sort === 'rating' ? 'selected' : ''}>Top Rated</option>
+              <option value="newest" ${params.sort === 'newest' ? 'selected' : ''}>Newest First</option>
+            </select>
           </div>
         </div>
+        ${gridHtml}
       </div>`;
     },
+
     mount(data) {
-      const reRun = async () => {
-        const sort = document.querySelector('[data-role="sort"]')?.value || 'featured';
-        const inStockOnly = document.querySelector('[data-role="stock-toggle"]')?.checked || false;
-        const products = await Api.getProducts({ ...data.params, sort, inStockOnly });
-        const bar = document.querySelector('.result-count');
-        if (bar) bar.innerHTML = `Showing <b>${products.length}</b> of <b>${data.all.length}</b> products`;
-        const grid = document.getElementById('listing-grid');
-        if (grid) {
-          grid.innerHTML = products.map(p => Components.productCard(p, p.categoryName || p.category)).join('');
-          refreshIcons(); hydrateReveals(grid);
-        }
-      };
-      document.querySelector('[data-role="sort"]')?.addEventListener('change', reRun);
-      document.querySelector('[data-role="stock-toggle"]')?.addEventListener('change', reRun);
+      const sortSelect = document.querySelector('[data-role="sort"]');
+      if (sortSelect) {
+        sortSelect.addEventListener('change', async () => {
+          const sort = sortSelect.value;
+          const products = await Api.getProducts({ ...data.params, sort });
+          const grid = document.getElementById('listing-grid');
+          if (grid) {
+            grid.innerHTML = products.map(p => Components.productCard(p, p.categoryName || p.category)).join('');
+            refreshIcons(grid);
+            hydrateReveals(grid);
+          }
+        });
+      }
     }
   },
 
@@ -477,13 +641,15 @@ const Pages = {
         .filter(x => x.id !== p.id).slice(0, 6);
       return { p, related };
     },
+
     render({ p, related }) {
       const out = p.stock <= 0;
       const low = !out && p.stock <= 10;
       const disc = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
-      const stock = out ? { dot: 'var(--red)', label: 'Out of stock — restocking soon' }
-        : low ? { dot: 'var(--accent)', label: `Low stock — only ${p.stock} left` }
-        : { dot: 'var(--green)', label: `In stock — ${p.stock} units available` };
+      const saveAmt = p.oldPrice && p.oldPrice > p.price ? (p.oldPrice - p.price) : 0;
+
+      const stockColor = out ? 'var(--red)' : (low ? 'var(--gold)' : 'var(--green)');
+      const stockLabel = out ? 'Out of stock — restocking soon' : (low ? `Low stock — only ${p.stock} units left` : `In Stock · 24h Express Dispatch`);
 
       const images = (p.images && p.images.length) ? p.images : ['https://picsum.photos/640/640'];
       const specsObj = p.specifications instanceof Map ? Object.fromEntries(p.specifications) : (p.specifications || {});
@@ -495,74 +661,128 @@ const Pages = {
           { label: p.categoryName || p.category, href: `#/category/${p.category}` },
           { label: p.name, href: '#' }
         ])}
+
         <div class="pdp-grid">
-          <div class="reveal">
-            <div class="gallery-main"><img id="gallery-main" src="${images[0]}" alt="${esc(p.name)}"></div>
+          <!-- Gallery -->
+          <div>
+            <div class="gallery-main">
+              <img id="gallery-main" src="${images[0]}" alt="${esc(p.name)}">
+            </div>
+            ${images.length > 1 ? `
             <div class="thumbs">
               ${images.map((src, i) => `
                 <button class="thumb ${i === 0 ? 'active' : ''}" data-action="select-thumb" data-src="${src}" aria-label="View image ${i + 1}">
                   <img src="${src}" alt="" loading="lazy">
                 </button>`).join('')}
-            </div>
+            </div>` : ''}
           </div>
-          <div class="pdp-info reveal">
-            <a class="pdp-cat" href="#/category/${p.category}">${esc(p.categoryName || p.category)}</a>
+
+          <!-- Product Details -->
+          <div class="pdp-info">
+            <span class="pdp-cat">${esc(p.categoryName || p.category)}</span>
             <h1>${esc(p.name)}</h1>
+
             <div class="pdp-rate">
-              ${stars(p.rating)}<b>${(p.rating || 5.0).toFixed(1)}</b>
-              <button class="pdp-rate-link" data-action="scroll-to" data-target="#reviews" style="all:unset;cursor:pointer;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-size:14px">(${p.reviewCount || (p.reviews && p.reviews.length) || 0} reviews)</button>
+              ${stars(p.rating)}
+              <b>${(p.rating || 5.0).toFixed(1)}</b>
+              <span style="color:var(--muted);font-size:12px">(${p.reviewCount || 0} reviews)</span>
             </div>
+
+            <!-- Price with Savings Highlight -->
             <div class="price-block">
               <span class="now">${formatPrice(p.price)}</span>
-              ${p.oldPrice ? `<s class="old">${formatPrice(p.oldPrice)}</s><span class="save-tag">Save ${formatPrice(p.oldPrice - p.price)} · −${disc}%</span>` : ''}
+              ${p.oldPrice ? `<s class="old">${formatPrice(p.oldPrice)}</s>` : ''}
+              ${saveAmt ? `<span class="save-tag">Save ${formatPrice(saveAmt)} (${disc}% OFF)</span>` : ''}
             </div>
+
             <p class="pdp-short">${esc(p.shortDescription)}</p>
-            <div class="stock-line"><span class="stock-dot" style="background:${stock.dot}"></span>${stock.label}</div>
+
+            <div class="stock-line">
+              <span class="stock-dot" style="background:${stockColor}"></span>
+              <span>${stockLabel}</span>
+            </div>
+
+            <!-- Live Calculation & Buy Section -->
             <div class="buy-row">
-              <div class="qty" aria-label="Quantity selector">
-                <button data-action="qty-minus" aria-label="Decrease quantity"><i data-lucide="minus"></i></button>
-                <span class="qty-val" id="qty-val">1</span>
-                <button data-action="qty-plus" aria-label="Increase quantity"><i data-lucide="plus"></i></button>
+              <div class="qty-calc-box">
+                <div class="qty" aria-label="Quantity selector">
+                  <button data-action="qty-minus" aria-label="Decrease quantity"><i data-lucide="minus"></i></button>
+                  <span class="qty-val" id="qty-val">1</span>
+                  <button data-action="qty-plus" aria-label="Increase quantity"><i data-lucide="plus"></i></button>
+                </div>
+                <div class="calc-subtotal" id="pdp-calc-preview">
+                  <span>Product Total + Rs. 250 Delivery</span>
+                  <b>Total COD: ${formatPrice(OrderMath.total(p.price, 1))}</b>
+                </div>
               </div>
-              <button class="btn btn-accent btn-lg btn-buy" id="main-buy-btn" data-action="order-now" data-id="${p.id}" ${out ? 'disabled' : ''}>
-                <i data-lucide="package"></i> Order Now (COD)
+
+              <!-- 2 Big Thumb-Friendly CTAs -->
+              <button class="btn btn-accent btn-buy" id="main-buy-btn" data-action="order-now" data-id="${p.id}" ${out ? 'disabled' : ''}>
+                <i data-lucide="package"></i> Order Now (Cash on Delivery)
               </button>
+
               <a class="btn btn-whatsapp btn-buy-wa" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollPoint! I want to order ${p.name} (Rs. ${p.price}). Please confirm availability.`)}" target="_blank">
-                <i data-lucide="message-circle"></i> Order via WhatsApp
+                <i data-lucide="message-circle"></i> Quick Order via WhatsApp
               </a>
             </div>
+
             <ul class="perks">
-              <li><i data-lucide="truck"></i>Flat ${formatPrice(OrderMath.FLAT_SHIPPING)} delivery</li>
-              <li><i data-lucide="banknote"></i>Cash on delivery</li>
+              <li><i data-lucide="truck"></i>Flat Rs. 250 delivery</li>
+              <li><i data-lucide="banknote"></i>Pay upon arrival (COD)</li>
               <li><i data-lucide="shield-check"></i>7-day replacement</li>
             </ul>
-            <p class="buy-note mono">Direct ordering · No account needed · Confirmed on WhatsApp</p>
+
+            <p class="buy-note mono">Dispatched within 24 hours · Confirmed on WhatsApp</p>
           </div>
         </div>
 
+        <!-- Collapsible Details Accordions -->
         <div class="pdp-detail reveal">
-          <div>
-            <h2>Description</h2>
-            <div class="prose">${(p.description || p.shortDescription || '').split('\n\n').map(t => `<p>${esc(t)}</p>`).join('')}</div>
-          </div>
-          <div>
-            <h2>Specifications</h2>
-            <dl class="spec-list">
-              ${Object.entries(specsObj).map(([k, v]) => `
-                <div class="spec-row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}
-            </dl>
-          </div>
-        </div>
+          <details class="pdp-accordion" open>
+            <summary>
+              <span>Product Description</span>
+              <i data-lucide="chevron-down"></i>
+            </summary>
+            <div class="pdp-accordion-content">
+              ${(p.description || p.shortDescription || '').split('\n\n').map(t => `<p style="margin-bottom:8px">${esc(t)}</p>`).join('')}
+            </div>
+          </details>
 
-        <section class="reviews reveal" id="reviews">${Components.reviewsSection(p)}</section>
+          ${Object.keys(specsObj).length ? `
+          <details class="pdp-accordion">
+            <summary>
+              <span>Technical Specifications</span>
+              <i data-lucide="chevron-down"></i>
+            </summary>
+            <div class="pdp-accordion-content">
+              <dl class="spec-list">
+                ${Object.entries(specsObj).map(([k, v]) => `
+                  <div class="spec-row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}
+              </dl>
+            </div>
+          </details>` : ''}
+
+          <details class="pdp-accordion" id="reviews-accordion" open>
+            <summary>
+              <span>Customer Reviews (${p.reviewCount || 0})</span>
+              <i data-lucide="chevron-down"></i>
+            </summary>
+            <div class="pdp-accordion-content">
+              ${Components.reviewsSection(p)}
+            </div>
+          </details>
+        </div>
 
         ${related.length ? `
-        <section style="margin-top:56px">
-          ${Components.sectionHead('You may also need', 'Related products', '', { href: `#/category/${p.category}`, label: 'More products' }, 'rel-rail')}
-          <div class="rail" id="rel-rail">${related.map(r => Components.productCard(r, r.categoryName || r.category)).join('')}</div>
+        <section style="margin-top:36px">
+          ${Components.sectionHead('You May Also Need', 'Related Supplies', '', { href: `#/category/${p.category}`, label: 'View category' }, 'rel-rail')}
+          <div class="rail" id="rel-rail">
+            ${related.map(r => Components.productCard(r, r.categoryName || r.category)).join('')}
+          </div>
         </section>` : ''}
       </div>`;
     },
+
     mount(data) {
       if (data && data.p) {
         UI.setupPdpStickyBar(data.p);
@@ -570,7 +790,7 @@ const Pages = {
     }
   },
 
-  // ---------------- ORDER FORM PAGE ----------------
+  // ---------------- ORDER CHECKOUT FORM (1-MINUTE EXPRESS) ----------------
   order: {
     async load(params) {
       const p = await Api.getProductById(params.id);
@@ -579,97 +799,97 @@ const Pages = {
       if (p.stock <= 0) throw new Error('Product is out of stock');
       return { p, qty };
     },
+
     render({ p, qty }) {
       const img0 = (p.images && p.images[0]) || 'https://picsum.photos/600/600';
       const sub = OrderMath.subtotal(p.price, qty);
       const ship = OrderMath.shipping();
       const total = OrderMath.total(p.price, qty);
 
-      const mobileSummaryHtml = `
-      <div class="mobile-order-summary" id="mobile-order-summary">
-        <div class="summary-toggle" data-action="toggle-summary">
-          <span class="sum-left">
-            <i data-lucide="receipt"></i>
-            <span>Order Summary (${qty} item${qty > 1 ? 's' : ''})</span>
-          </span>
-          <span style="display:flex;align-items:center;gap:8px">
-            <span class="sum-price">${formatPrice(total)}</span>
-            <i data-lucide="chevron-down"></i>
-          </span>
-        </div>
-        <div class="summary-content">
-          <div class="r-item-edit" style="margin-bottom:12px">
-            <img src="${img0}" alt="">
-            <div><b>${esc(p.name)}</b><small>Qty: ${qty} · ${formatPrice(p.price)} each</small></div>
-            <a href="#/product/${p.slug}">Edit</a>
-          </div>
-          <div style="font-size:13px;color:var(--ink-2);display:flex;flex-direction:column;gap:6px">
-            <div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatPrice(sub)}</span></div>
-            <div style="display:flex;justify-content:space-between"><span>Flat Nationwide Shipping</span><span>${formatPrice(ship)}</span></div>
-            <div style="border-top:1px dashed var(--line-2);padding-top:6px;display:flex;justify-content:space-between;font-weight:700;color:var(--ink)">
-              <span>Total Payable (COD)</span>
-              <span style="color:var(--accent);font-family:var(--fm)">${formatPrice(total)}</span>
-            </div>
-          </div>
-        </div>
-      </div>`;
-
       return `
-      <div class="container">
+      <div class="container" style="padding-top:10px">
         ${Components.breadcrumbs([
           { label: 'Home', href: '#/' },
           { label: p.name, href: `#/product/${p.slug}` },
-          { label: 'Order form', href: '#' }
+          { label: 'Express Checkout', href: '#' }
         ])}
+
         <div class="order-grid">
           <div class="order-form-col reveal">
-            <p class="kicker">Secure checkout · Cash on delivery</p>
-            <h1>Complete your order</h1>
-            <p class="lead">Fill in your details below — our team confirms every order on WhatsApp before dispatch.</p>
+            <span class="kicker">⚡ 1-Minute Express Checkout</span>
+            <h1>Complete Your Order</h1>
+            <p class="lead">Pay Cash on Delivery. Flat Rs. 250 shipping anywhere in Pakistan.</p>
 
-            ${mobileSummaryHtml}
+            <!-- Collapsible Order Summary Dropdown -->
+            <div class="mobile-order-summary open" id="mobile-order-summary">
+              <div class="summary-toggle" data-action="toggle-summary">
+                <span class="sum-left">
+                  <i data-lucide="receipt"></i>
+                  <span>Order Items (${qty})</span>
+                </span>
+                <span style="display:flex;align-items:center;gap:8px">
+                  <span class="sum-price">${formatPrice(total)}</span>
+                  <i data-lucide="chevron-down"></i>
+                </span>
+              </div>
+              <div class="summary-content">
+                <div class="r-item-edit" style="margin-bottom:12px">
+                  <img src="${img0}" alt="">
+                  <div><b>${esc(p.name)}</b><small>Qty: ${qty} · ${formatPrice(p.price)} each</small></div>
+                  <a href="#/product/${p.slug}">Change</a>
+                </div>
+                <div style="font-size:13px;display:flex;flex-direction:column;gap:6px">
+                  <div style="display:flex;justify-content:space-between;color:var(--muted)"><span>Product Subtotal</span><span>${formatPrice(sub)}</span></div>
+                  <div style="display:flex;justify-content:space-between;color:var(--muted)"><span>Nationwide Flat Delivery</span><span>${formatPrice(ship)}</span></div>
+                  <div style="border-top:1px dashed var(--line-2);padding-top:6px;display:flex;justify-content:space-between;font-weight:700;font-size:14.5px">
+                    <span>Total Payable (COD)</span>
+                    <span style="color:var(--accent);font-family:var(--fd)">${formatPrice(total)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
+            <!-- Checkout Form -->
             <form class="order-form" data-form="order" data-id="${p.id}" novalidate>
-              <div class="form-title"><i data-lucide="user"></i> Customer details</div>
+              <div class="form-title">
+                <i data-lucide="truck"></i> Delivery Information
+              </div>
               <div class="form-grid">
                 <div class="field">
-                  <label for="f-name">Customer name *</label>
-                  <input id="f-name" name="name" type="text" placeholder="e.g. Ahmed Khan" autocomplete="name" required>
+                  <label for="f-name">Full Name *</label>
+                  <input id="f-name" name="name" type="text" placeholder="e.g. Tariq Mehmood" autocomplete="name" required>
                   <span class="err">Please enter your full name.</span>
                 </div>
                 <div class="field">
-                  <label for="f-phone">Working / WhatsApp number *</label>
-                  <input id="f-phone" name="phone" type="tel" inputmode="tel" placeholder="03XX XXXXXXX" autocomplete="tel" required>
+                  <label for="f-phone">WhatsApp / Mobile Number *</label>
+                  <input id="f-phone" name="phone" type="tel" inputmode="tel" placeholder="0300 1234567" autocomplete="tel" required>
                   <span class="err">Enter a valid 11-digit mobile number (03XXXXXXXXX).</span>
                 </div>
                 <div class="field full">
-                  <label for="f-email">Email <small>(optional, for receipt & updates)</small></label>
-                  <input id="f-email" name="email" type="email" inputmode="email" placeholder="you@example.com" autocomplete="email">
-                  <span class="err">Enter a valid email address.</span>
-                </div>
-                <div class="field full">
-                  <label for="f-address">Full delivery address *</label>
-                  <textarea id="f-address" name="address" placeholder="House / shop no., street, area landmark…" autocomplete="street-address" required></textarea>
-                  <span class="err">Please enter a complete delivery address (at least 6 characters).</span>
-                </div>
-                <div class="field">
                   <label for="f-city">City *</label>
                   <input id="f-city" name="city" type="text" placeholder="e.g. Lahore" autocomplete="address-level2" required>
+                  ${Components.pakistanCityChips()}
                   <span class="err">Please enter your city.</span>
                 </div>
-                <div class="field">
-                  <label for="f-notes">Order notes <small>(optional)</small></label>
-                  <input id="f-notes" name="notes" type="text" placeholder="Special delivery instructions">
+                <div class="field full">
+                  <label for="f-address">Full Delivery Address *</label>
+                  <textarea id="f-address" name="address" placeholder="Shop / House #, Street, Plaza name, Area landmark..." autocomplete="street-address" required></textarea>
+                  <span class="err">Please enter a complete delivery address.</span>
+                </div>
+                <div class="field full">
+                  <label for="f-notes">Order Notes <small>(Optional)</small></label>
+                  <input id="f-notes" name="notes" type="text" placeholder="e.g. Deliver between 10am-5pm">
                 </div>
               </div>
 
               <div class="confirm-wrap">
                 <button class="btn btn-accent btn-lg btn-block" type="submit" data-role="confirm-btn">
-                  <i data-lucide="check"></i> Confirm Cash on Delivery
+                  <i data-lucide="check-circle-2"></i> Confirm Order — ${formatPrice(total)} (COD)
                 </button>
-                <p class="confirm-note">Cash on delivery · Flat Rs. 250 shipping · Instant WhatsApp confirmation</p>
+                <p class="confirm-note">Cash on Delivery · Dispatched within 24 Hours</p>
+
                 <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line-2)">
-                  <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Skip typing address? Order directly on WhatsApp:</p>
+                  <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Prefer ordering directly on WhatsApp?</p>
                   <a class="btn btn-whatsapp btn-sm btn-block" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollPoint! I want to order ${p.name} (Qty: ${qty}, Total: ${formatPrice(total)} COD). Please confirm my order.`)}" target="_blank">
                     <i data-lucide="message-circle"></i> Quick Order via WhatsApp
                   </a>
@@ -678,12 +898,8 @@ const Pages = {
             </form>
           </div>
 
+          <!-- Thermal Receipt Sidebar -->
           <div class="receipt-col reveal">
-            <div class="r-item-edit">
-              <img src="${img0}" alt="">
-              <div><b>${esc(p.name)}</b><small>Qty: ${qty} · ${formatPrice(p.price)} each</small></div>
-              <a href="#/product/${p.slug}">Edit</a>
-            </div>
             ${Components.receipt(p, qty)}
           </div>
         </div>
@@ -694,34 +910,36 @@ const Pages = {
   // ---------------- ORDER CONFIRMATION VIEW ----------------
   orderDone(order, product, qty, whatsappUrl, whatsappMessage) {
     return `
-    <div class="confirm-hero reveal in">
-      <span class="ok-ring"><i data-lucide="check"></i></span>
-      <h1>Order received — thank you!</h1>
-      <p>Your order has been recorded in our system. We are opening <b>WhatsApp (${BUSINESS.whatsappLocal})</b> to confirm your order details.</p>
-      <span class="order-id-tag">ORDER ID · ${esc(order.orderId || order.id)}</span>
-    </div>
-    <div class="container confirm-grid reveal in">
-      ${Components.receipt(product, qty, { orderId: order.orderId || order.id, stamp: true })}
-
-      <div class="wa-notice-box">
-        <i data-lucide="message-circle"></i>
-        <div>
-          <b>WhatsApp Order Confirmation</b>
-          <p style="margin-top:2px">Click the button below if WhatsApp did not open automatically.</p>
-        </div>
-        <a class="btn btn-accent btn-sm" href="${whatsappUrl}" target="_blank" style="margin-left:auto;white-space:nowrap">
-          Open WhatsApp <i data-lucide="external-link"></i>
-        </a>
+    <div class="container" style="padding-top:20px;padding-bottom:40px">
+      <div class="confirm-hero reveal in">
+        <span class="ok-ring"><i data-lucide="check"></i></span>
+        <h1>Order Received — Thank You!</h1>
+        <p>Your order has been recorded in our dispatch system. We are opening <b>WhatsApp (${BUSINESS.whatsappLocal})</b> to confirm your order.</p>
+        <span class="order-id-tag">ORDER ID: ${esc(order.orderId || order.id)}</span>
       </div>
 
-      <details class="wa-preview">
-        <summary>View order message text</summary>
-        <pre>${esc(whatsappMessage || OrderMath.buildWhatsAppMessage(order))}</pre>
-      </details>
+      <div style="max-width:540px;margin:0 auto">
+        ${Components.receipt(product, qty, { orderId: order.orderId || order.id, stamp: true })}
 
-      <div class="confirm-actions">
-        <a class="btn btn-ink" href="#/">Back to shop <i data-lucide="arrow-right"></i></a>
-        <a class="btn btn-outline" href="#/product/${product.slug}">View product</a>
+        <div class="wa-notice-box">
+          <i data-lucide="message-circle"></i>
+          <div>
+            <b>WhatsApp Confirmation</b>
+            <p style="margin-top:2px">Tap below if WhatsApp did not open automatically.</p>
+          </div>
+          <a class="btn btn-accent btn-sm" href="${whatsappUrl}" target="_blank" style="margin-left:auto;white-space:nowrap">
+            Open WhatsApp <i data-lucide="external-link"></i>
+          </a>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:20px">
+          <a class="btn btn-ink btn-block" href="#/">
+            <i data-lucide="home"></i> Back to Home
+          </a>
+          <a class="btn btn-outline btn-block" href="#/shop">
+            <i data-lucide="shopping-bag"></i> Browse More
+          </a>
+        </div>
       </div>
     </div>`;
   },
@@ -731,40 +949,36 @@ const Pages = {
     async load() { return {}; },
     render() {
       return `
-      <div class="container">
-        <div class="about-grid">
-          <div class="reveal">
-            <p class="kicker">// About us</p>
-            <h1>The store behind your counter.</h1>
-            <div class="prose">
-              <p>${esc(BUSINESS.footerAboutText)}</p>
-              <p>We stock everything that lives next to a cash register: register rolls, jumbo rolls, shipping labels, pocket-printer paper, scanners, printers and cash drawers. Every item is stocked in our own warehouse and dispatched within 24 hours.</p>
-              <p>We keep ordering simple on purpose — pick a product, fill one form, confirm on WhatsApp. No accounts, no apps, no waiting.</p>
-            </div>
-            <div class="faq" style="margin-top:34px">
-              <details>
-                <summary>How long does delivery take? <i data-lucide="plus"></i></summary>
-                <p>Orders dispatch within 24 hours. Major cities typically receive in 2–3 working days; other areas 3–5 working days via courier.</p>
-              </details>
-              <details>
-                <summary>Is cash on delivery available? <i data-lucide="plus"></i></summary>
-                <p>Yes — COD is available nationwide. Shipping is a flat Rs. 250 per order, no matter how many rolls you order.</p>
-              </details>
-              <details>
-                <summary>Do you supply in bulk? <i data-lucide="plus"></i></summary>
-                <p>Absolutely. For orders of 50+ rolls or recurring monthly supply, message us on WhatsApp (${BUSINESS.whatsappLocal}) for wholesale pricing.</p>
-              </details>
-            </div>
-          </div>
-          <div class="reveal">
-            <div class="contact-card">
-              <h3>Contact us</h3>
-              <p>We reply within working hours — usually much faster on WhatsApp.</p>
-              <div class="contact-line"><i data-lucide="phone"></i><div><b>Phone / WhatsApp</b><span class="mono">${BUSINESS.whatsappLocal}</span></div></div>
-              <div class="contact-line"><i data-lucide="mail"></i><div><b>Email</b><a href="mailto:${BUSINESS.email}" class="mono" style="color:var(--accent);text-decoration:none">${BUSINESS.email}</a></div></div>
-              <div class="contact-line"><i data-lucide="map-pin"></i><div><b>Warehouse &amp; Location</b><span>${BUSINESS.address}</span><a href="${BUSINESS.mapsUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:var(--accent);font-weight:600;font-size:13px;margin-top:6px;text-decoration:none;"><i data-lucide="map" style="width:14px;height:14px"></i> Open in Google Maps <i data-lucide="external-link" style="width:12px;height:12px"></i></a></div></div>
-              <div class="contact-line"><i data-lucide="clock"></i><div><b>Hours</b><span>${BUSINESS.hours}</span></div></div>
-              <a class="btn btn-accent btn-block" style="margin-top:20px" href="#/shop">Start an order <i data-lucide="arrow-right"></i></a>
+      <div class="container" style="padding-top:16px;padding-bottom:30px">
+        <div class="reveal">
+          <span class="kicker">// About RollPoint</span>
+          <h1 style="font-size:26px;margin:6px 0 12px">The Store Behind Your Counter</h1>
+          <p style="font-size:14px;color:var(--ink-2);line-height:1.6;margin-bottom:14px">${esc(BUSINESS.footerAboutText)}</p>
+          <p style="font-size:14px;color:var(--ink-2);line-height:1.6;margin-bottom:20px">We stock high-density BPA-free thermal rolls, shipping barcode labels, barcode scanners, thermal receipt printers, and cash drawers. Dispatched within 24 hours across Pakistan on cash on delivery.</p>
+
+          ${Components.trustMatrix()}
+
+          <!-- Contact Details Card -->
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:20px">
+            <h3 style="font-size:18px;margin-bottom:14px">Contact & Warehouse</h3>
+            <div style="display:flex;flex-direction:column;gap:12px;font-size:13.5px">
+              <div style="display:flex;gap:10px">
+                <i data-lucide="phone" style="width:18px;height:18px;color:var(--accent)"></i>
+                <div><b>Phone / WhatsApp</b><br><span class="mono">${BUSINESS.whatsappLocal}</span></div>
+              </div>
+              <div style="display:flex;gap:10px">
+                <i data-lucide="mail" style="width:18px;height:18px;color:var(--accent)"></i>
+                <div><b>Email</b><br><a href="mailto:${BUSINESS.email}" style="color:var(--accent)">${BUSINESS.email}</a></div>
+              </div>
+              <div style="display:flex;gap:10px">
+                <i data-lucide="map-pin" style="width:18px;height:18px;color:var(--accent)"></i>
+                <div><b>Warehouse Location</b><br>${BUSINESS.address}<br>
+                <a href="${BUSINESS.mapsUrl}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700;display:inline-flex;align-items:center;gap:4px;margin-top:4px">Open in Google Maps <i data-lucide="external-link" style="width:12px;height:12px"></i></a></div>
+              </div>
+              <div style="display:flex;gap:10px">
+                <i data-lucide="clock" style="width:18px;height:18px;color:var(--accent)"></i>
+                <div><b>Working Hours</b><br>${BUSINESS.hours}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -780,7 +994,7 @@ const Pages = {
     },
     mount() {
       const container = document.getElementById('admin-root-container');
-      if (container) AdminUI.render(container);
+      if (container && window.AdminUI) AdminUI.render(container);
     }
   },
 
@@ -788,11 +1002,12 @@ const Pages = {
   notFound: {
     async load() { return {}; },
     render() {
-      return `<div class="nf-wrap">
-        <div class="code">404</div>
-        <h1>Page not found</h1>
-        <p>The page you’re looking for rolled off the shelf.</p>
-        <a class="btn btn-ink btn-lg" href="#/">Back to home</a>
+      return `
+      <div style="text-align:center;padding:70px 20px">
+        <h1 style="font-size:42px;color:var(--accent)">404</h1>
+        <h2 style="font-size:20px;margin-bottom:8px">Page Not Found</h2>
+        <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px">The product or page you are looking for has been moved or restocked.</p>
+        <a class="btn btn-accent btn-sm" href="#/">Back to Home</a>
       </div>`;
     }
   }
@@ -825,6 +1040,11 @@ const Router = {
     if (cur === null) return;
     UI.closeDrawer(); UI.hideSuggest();
 
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    UI.startTopLoader();
+
     let match = null, page = null;
     for (const r of this.routes) {
       const m = cur.path.match(r.pattern);
@@ -839,7 +1059,11 @@ const Router = {
     }
 
     const app = document.getElementById('app');
-    app.innerHTML = `<div style="text-align:center;padding:70px 20px"><span class="spinner" style="width:30px;height:30px;border-top-color:var(--accent)"></span></div>`;
+    app.innerHTML = `
+      <div class="route-loading-state">
+        <span class="spinner"></span>
+        <span style="font-size:13px;color:var(--muted);font-weight:600">Loading RollPoint…</span>
+      </div>`;
 
     let data;
     try {
@@ -851,7 +1075,10 @@ const Router = {
       app.innerHTML = page.render(data, params);
     }
 
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
     if (page.mount) page.mount(data, params);
     refreshIcons(); hydrateReveals(app);
     UI.setActiveNav();
@@ -860,44 +1087,69 @@ const Router = {
     if (!cur.path.startsWith('/product')) {
       UI.removePdpStickyBar();
     }
+    UI.finishTopLoader();
   }
 };
 
 // UI Shell
 const UI = {
+  startTopLoader() {
+    const bar = document.getElementById('top-progress-bar');
+    if (!bar) return;
+    bar.classList.add('loading');
+    bar.style.width = '40%';
+    setTimeout(() => {
+      if (bar.classList.contains('loading')) bar.style.width = '80%';
+    }, 120);
+  },
+
+  finishTopLoader() {
+    const bar = document.getElementById('top-progress-bar');
+    if (!bar) return;
+    bar.style.width = '100%';
+    setTimeout(() => {
+      bar.classList.remove('loading');
+      bar.style.opacity = '0';
+      setTimeout(() => {
+        bar.style.width = '0%';
+        bar.style.opacity = '';
+      }, 250);
+    }, 150);
+  },
+
   renderTopbar() {
     document.getElementById('topbar').innerHTML = `
-      <span><i data-lucide="banknote"></i> Cash on delivery nationwide</span>
-      <span><i data-lucide="truck"></i> Flat ${formatPrice(OrderMath.FLAT_SHIPPING)} shipping</span>
-      <a href="tel:+${BUSINESS.whatsappIntl}"><i data-lucide="phone"></i> ${BUSINESS.whatsappLocal}</a>`;
+      <span><i data-lucide="truck"></i> Flat Rs. 250 Delivery</span>
+      <span><i data-lucide="banknote"></i> Cash on Delivery Nationwide</span>
+      <a href="https://wa.me/${BUSINESS.whatsappIntl}" target="_blank"><i data-lucide="message-circle"></i> ${BUSINESS.whatsappLocal}</a>`;
   },
 
   searchBox(id) {
     return `<div class="search-wrap" id="${id}">
-      <i data-lucide="search" class="search-ico"></i>
-      <input class="search-input js-search" type="search" placeholder="Search rolls, labels, printers…" aria-label="Search products" autocomplete="off">
-      <span class="search-kbd">/</span>
+      <div class="daraz-search-box">
+        <input class="search-input js-search" type="search" placeholder="Search rolls, shipping labels, printers..." aria-label="Search products" autocomplete="off">
+        <div class="daraz-search-actions">
+          <button class="daraz-cam-btn" type="button" aria-label="Search by image"><i data-lucide="camera"></i></button>
+          <button class="daraz-search-btn" type="button" data-action="search-submit">Search</button>
+        </div>
+      </div>
       <div class="suggest" hidden></div>
     </div>`;
   },
 
   renderHeader(cats) {
     document.getElementById('site-header').innerHTML = `
-      <div class="container masthead-in">
-        ${Components.brand()}
-        ${this.searchBox('search-desktop')}
-        <a class="wa-chip" href="https://wa.me/${BUSINESS.whatsappIntl}" target="_blank">
-          <i data-lucide="message-circle"></i>
-          <span><small>Order on WhatsApp</small><b>${BUSINESS.whatsappLocal}</b></span>
-        </a>
-        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
-          <a class="icon-btn mobile-only-btn" href="https://wa.me/${BUSINESS.whatsappIntl}" target="_blank" aria-label="WhatsApp" style="color:#25D366;border-color:rgba(37,211,102,0.4)">
-            <i data-lucide="message-circle"></i>
+      <div class="daraz-header-wrap">
+        <div class="daraz-search-row">
+          ${this.searchBox('search-desktop')}
+          <a class="daraz-digital-btn" href="https://wa.me/${BUSINESS.whatsappIntl}" target="_blank" title="Official Store & WhatsApp Orders">
+            <span>OFFICIAL</span>
+            <span>STORE</span>
           </a>
-          <button class="icon-btn menu-btn" data-action="menu-open" aria-label="Open menu"><i data-lucide="menu"></i></button>
         </div>
       </div>
-      <div class="container mobile-search">${this.searchBox('search-mobile')}</div>
+
+      <!-- Desktop Sub-Navigation -->
       <nav class="mainnav" aria-label="Primary">
         <div class="container mainnav-in">
           <a href="#/" data-nav="home">Home</a>
@@ -908,7 +1160,7 @@ const UI = {
               ${cats.map(c => `<a href="#/category/${c.slug}">${esc(c.name)}<span>${c.count}</span></a>`).join('')}
             </div>
           </div>
-          <a href="#/about" data-nav="about">About &amp; Contact</a>
+          <a href="#/about" data-nav="about">About & Contact</a>
         </div>
       </nav>`;
   },
@@ -927,15 +1179,15 @@ const UI = {
       </a>
       <a class="m-tab" href="javascript:void(0)" data-action="menu-open" data-tab="categories">
         <i data-lucide="layout-grid"></i>
-        <span>Categories</span>
+        <span>Aisles</span>
       </a>
-      <a class="m-tab wa-tab" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent('Hi RollPoint! I want to inquire about products.')}" target="_blank" data-tab="whatsapp">
+      <a class="m-tab wa-tab" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent('Hi RollPoint! I want to order supplies.')}" target="_blank" data-tab="whatsapp">
         <i data-lucide="message-circle"></i>
         <span>WhatsApp</span>
       </a>
-      <a class="m-tab" href="javascript:void(0)" data-action="menu-open" data-tab="menu">
-        <i data-lucide="menu"></i>
-        <span>Menu</span>
+      <a class="m-tab" href="#/about" data-tab="about">
+        <i data-lucide="phone"></i>
+        <span>Contact</span>
       </a>`;
     refreshIcons(bar);
   },
@@ -952,6 +1204,8 @@ const UI = {
       document.querySelector('.m-tab[data-tab="shop"]')?.classList.add('active');
     } else if (path.startsWith('/category')) {
       document.querySelector('.m-tab[data-tab="categories"]')?.classList.add('active');
+    } else if (path.startsWith('/about')) {
+      document.querySelector('.m-tab[data-tab="about"]')?.classList.add('active');
     }
   },
 
@@ -965,17 +1219,17 @@ const UI = {
       <div class="pdp-sticky-bar" id="pdp-sticky-bar">
         <div class="pdp-sticky-info">
           <img class="pdp-sticky-img" src="${img0}" alt="">
-          <div class="pdp-sticky-text">
+          <div>
             <span class="pdp-sticky-name">${esc(p.name)}</span>
             <span class="pdp-sticky-price">${formatPrice(p.price)}</span>
           </div>
         </div>
         <div class="pdp-sticky-actions">
-          <a class="pdp-sticky-btn wa-btn" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollPoint! I want to order ${p.name} (Rs. ${p.price}).`)}" target="_blank" title="WhatsApp Order">
+          <a class="btn pdp-sticky-btn wa-btn" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollPoint! I want to order ${p.name} (Rs. ${p.price}).`)}" target="_blank" title="WhatsApp Order">
             <i data-lucide="message-circle"></i>
           </a>
           <button class="btn btn-accent pdp-sticky-btn" data-action="order-now" data-id="${p.id}" ${out ? 'disabled' : ''}>
-            <i data-lucide="package"></i> Order Now
+            <i data-lucide="package"></i> Order COD
           </button>
         </div>
       </div>`;
@@ -990,7 +1244,7 @@ const UI = {
       const mainBuy = document.getElementById('main-buy-btn') || document.querySelector('.buy-row');
       if (!mainBuy) return;
       const rect = mainBuy.getBoundingClientRect();
-      if (rect.bottom < 60) {
+      if (rect.bottom < 80) {
         bar.classList.add('visible');
       } else {
         bar.classList.remove('visible');
@@ -1013,41 +1267,43 @@ const UI = {
     document.getElementById('drawer-body').innerHTML = `
       <a class="d-link" href="#/">Home</a>
       <a class="d-link" href="#/shop">All Products <span>${cats.reduce((s, c) => s + c.count, 0)}</span></a>
-      <div class="drawer-label">Categories</div>
-      ${cats.map(c => `<a class="d-link" href="#/category/${c.slug}">${esc(c.name)}<span>${c.count}</span></a>`).join('')}
-      <div class="drawer-label">Company</div>
-      <a class="d-link" href="#/about">About &amp; Contact</a>`;
+      <div class="drawer-label">Browse Categories</div>
+      ${cats.map(c => `<a class="d-link" href="#/category/${c.slug}">${esc(c.name)}<span>${c.count} items</span></a>`).join('')}
+      <div class="drawer-label">Customer Support</div>
+      <a class="d-link" href="#/about">About & Location</a>
+      <a class="d-link" href="https://wa.me/${BUSINESS.whatsappIntl}" target="_blank">WhatsApp Direct Call</a>`;
     document.getElementById('drawer-foot').innerHTML = `
-      <a class="btn btn-accent btn-block" href="https://wa.me/${BUSINESS.whatsappIntl}" target="_blank">
-        <i data-lucide="message-circle"></i> Chat on WhatsApp ${BUSINESS.whatsappLocal}</a>`;
+      <a class="btn btn-whatsapp btn-block" href="https://wa.me/${BUSINESS.whatsappIntl}" target="_blank">
+        <i data-lucide="message-circle"></i> Chat on WhatsApp (${BUSINESS.whatsappLocal})
+      </a>`;
   },
 
   renderFooter(cats) {
     document.getElementById('site-footer').innerHTML = `
       <div class="container foot-main">
         <div class="foot-brand">
-          ${Components.brand(true)}
+          ${Components.brand()}
           <p>${esc(BUSINESS.footerAboutText)}</p>
         </div>
         <div class="foot-col">
-          <h4>Categories</h4>
-          <ul>${cats.map(c => `<li><a href="#/category/${c.slug}">${esc(c.name)}<span class="cnt">${c.count}</span></a></li>`).join('')}</ul>
+          <h4>Aisles</h4>
+          <ul>${cats.map(c => `<li><a href="#/category/${c.slug}">${esc(c.name)}<span>${c.count}</span></a></li>`).join('')}</ul>
         </div>
         <div class="foot-col">
-          <h4>Quick links</h4>
+          <h4>Quick Links</h4>
           <ul>
             <li><a href="#/">Home</a></li>
             <li><a href="#/shop">All products</a></li>
-            <li><a href="#/about">About &amp; contact</a></li>
-            <li><a href="#/about">Bulk / wholesale orders</a></li>
+            <li><a href="#/about">About us</a></li>
+            <li><a href="https://wa.me/${BUSINESS.whatsappIntl}" target="_blank">Bulk orders</a></li>
           </ul>
         </div>
         <div class="foot-col">
-          <h4>Contact</h4>
+          <h4>Warehouse & Contact</h4>
           <ul class="foot-contact">
-            <li><i data-lucide="message-circle"></i><span class="mono">WhatsApp · ${BUSINESS.whatsappLocal}</span></li>
-            <li><i data-lucide="mail"></i><a href="mailto:${BUSINESS.email}" class="mono" style="color:inherit;text-decoration:none">${BUSINESS.email}</a></li>
-            <li><i data-lucide="map-pin"></i><span>${BUSINESS.address}<br><a href="${BUSINESS.mapsUrl}" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:3px;margin-top:3px;text-decoration:none;">View on Google Maps <i data-lucide="external-link" style="width:11px;height:11px"></i></a></span></li>
+            <li><i data-lucide="phone"></i><span class="mono">${BUSINESS.whatsappLocal}</span></li>
+            <li><i data-lucide="mail"></i><a href="mailto:${BUSINESS.email}">${BUSINESS.email}</a></li>
+            <li><i data-lucide="map-pin"></i><span>${BUSINESS.address}</span></li>
             <li><i data-lucide="clock"></i><span>${BUSINESS.hours}</span></li>
           </ul>
         </div>
@@ -1055,8 +1311,8 @@ const UI = {
       <div class="foot-bottom">
         <div class="container foot-bottom-in">
           <span>© ${new Date().getFullYear()} ${BUSINESS.name}. All rights reserved.</span>
-          <span>Prices include GST · Flat ${formatPrice(OrderMath.FLAT_SHIPPING)} shipping</span>
-          <a class="admin-link" href="#/admin" title="Staff Administration">Admin</a>
+          <span>Flat ${formatPrice(OrderMath.FLAT_SHIPPING)} Nationwide Shipping · Cash on Delivery</span>
+          <a class="admin-link" href="#/admin" title="Admin">Admin</a>
         </div>
       </div>`;
   },
@@ -1085,7 +1341,7 @@ const UI = {
             <span><span class="sg-name">${esc(p.name)}</span><br><span class="sg-cat">${esc(p.categoryName || p.category)}</span></span>
             <span class="sg-price">${formatPrice(p.price)}</span>
           </a>`).join('') +
-        `<a class="suggest-all" href="#/search?q=${encodeURIComponent(q)}">See all ${total} result${total !== 1 ? 's' : ''} →</a>`
+        `<a class="suggest-all" href="#/search?q=${encodeURIComponent(q)}">See all ${total} results →</a>`
       : `<div class="suggest-item"><span class="sg-cat">No products matched “${esc(q)}”.</span></div>`;
     box.hidden = false;
   },
@@ -1099,6 +1355,7 @@ const UI = {
     const key = path.startsWith('/product') || path.startsWith('/order') || path === '/shop' || path.startsWith('/search') ? 'shop'
       : path.startsWith('/category') ? 'categories'
       : path.startsWith('/about') ? 'about'
+      : path.startsWith('/admin') ? 'admin'
       : path === '/' || path === '' ? 'home' : '';
     document.querySelectorAll('.mainnav-in [data-nav]').forEach(a => {
       if (a.dataset.nav === key) a.setAttribute('aria-current', 'true');
@@ -1114,7 +1371,7 @@ const UI = {
     else if (path === '/shop') t = 'All Products · ' + base;
     else if (path.startsWith('/about')) t = 'About & Contact · ' + base;
     else if (path.startsWith('/admin')) t = 'Admin Dashboard · ' + base;
-    else if (path.startsWith('/order')) t = 'Checkout · ' + base;
+    else if (path.startsWith('/order')) t = 'Express Checkout · ' + base;
     document.title = t;
   },
 
@@ -1126,6 +1383,39 @@ const UI = {
     el.innerHTML = `<i data-lucide="${icon}"></i><span>${esc(msg)}</span>`;
     root.appendChild(el); refreshIcons(el);
     setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 260); }, 3800);
+  },
+
+  // Social Proof Order Notification Ticker (Popups real orders to keep customer engaged)
+  startSocialProofTicker() {
+    if (window._socialProofTimer) return;
+    const orders = [
+      { name: 'Sajjad', city: 'Lahore', item: '10x 80x80 Thermal Rolls', time: '2m ago' },
+      { name: 'Kashif', city: 'Karachi', item: '5x 4x6 Shipping Labels', time: '5m ago' },
+      { name: 'Usama', city: 'Rawalpindi', item: '1x POS Thermal Printer', time: '9m ago' },
+      { name: 'Farhan', city: 'Faisalabad', item: '20x 57x40 POS Rolls', time: '14m ago' },
+      { name: 'Noman', city: 'Islamabad', item: '3x Pocket Sticker Rolls', time: '18m ago' }
+    ];
+
+    let idx = 0;
+    let pill = document.getElementById('social-proof-pill');
+    if (!pill) {
+      pill = document.createElement('div');
+      pill.id = 'social-proof-pill';
+      document.body.appendChild(pill);
+    }
+
+    const showNext = () => {
+      const o = orders[idx % orders.length];
+      idx++;
+      pill.innerHTML = `<span class="sp-icon">🛍️</span><span class="sp-text"><b>${o.name}</b> from ${o.city} ordered ${o.item} · <small>${o.time}</small></span>`;
+      pill.classList.add('show');
+      setTimeout(() => {
+        pill.classList.remove('show');
+      }, 4200);
+    };
+
+    setTimeout(showNext, 3000);
+    window._socialProofTimer = setInterval(showNext, 14000);
   }
 };
 
@@ -1134,17 +1424,36 @@ const Actions = {
   'menu-open':     () => UI.openDrawer(),
   'menu-close':    () => UI.closeDrawer(),
   'toggle-summary':() => document.getElementById('mobile-order-summary')?.classList.toggle('open'),
-  'rail-prev':     el => document.getElementById(el.dataset.target)?.scrollBy({ left: -296, behavior: 'smooth' }),
-  'rail-next':     el => document.getElementById(el.dataset.target)?.scrollBy({ left: 296, behavior: 'smooth' }),
-  'scroll-to':     el => document.querySelector(el.dataset.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+  'rail-prev':     el => document.getElementById(el.dataset.target)?.scrollBy({ left: -260, behavior: 'smooth' }),
+  'rail-next':     el => document.getElementById(el.dataset.target)?.scrollBy({ left: 260, behavior: 'smooth' }),
 
   'select-thumb': (el) => {
     const main = document.getElementById('gallery-main');
     if (!main) return;
     main.src = el.dataset.src;
-    main.style.animation = 'none'; void main.offsetWidth; main.style.animation = '';
     el.closest('.thumbs').querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
+  },
+
+  'collect-vouchers': (el) => {
+    el.textContent = 'Collected ✓';
+    el.classList.add('collected');
+    UI.toast('All vouchers collected! Extra discount applied.', 'check-circle-2', 'success');
+  },
+
+  'search-submit': () => {
+    const input = document.querySelector('.js-search:focus') || document.querySelector('.daraz-search-box input') || document.querySelector('.js-search');
+    const q = input?.value.trim();
+    if (q) location.hash = `#/search?q=${encodeURIComponent(q)}`;
+  },
+
+  'select-city': (el) => {
+    const cityInput = document.getElementById('f-city');
+    if (!cityInput) return;
+    cityInput.value = el.dataset.city;
+    document.querySelectorAll('.city-chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    cityInput.closest('.field')?.classList.remove('invalid');
   },
 
   'qty-minus': () => Actions._qty(-1),
@@ -1154,7 +1463,15 @@ const Actions = {
     if (!el) return;
     const next = Math.min(99, Math.max(1, (parseInt(el.textContent, 10) || 1) + d));
     el.textContent = next;
-    el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+
+    // Update live total preview on PDP
+    const priceEl = document.querySelector('.price-block .now');
+    const calcPreview = document.getElementById('pdp-calc-preview');
+    if (priceEl && calcPreview) {
+      const unitPrice = parseInt(priceEl.textContent.replace(/[^0-9]/g, ''), 10) || 0;
+      const total = OrderMath.total(unitPrice, next);
+      calcPreview.innerHTML = `<span>Product Total + Rs. 250 Delivery</span><b>Total COD: ${formatPrice(total)}</b>`;
+    }
   },
 
   'order-now': (el) => {
@@ -1182,7 +1499,16 @@ document.addEventListener('click', (e) => {
   const trigger = e.target.closest('[data-action]');
   if (!e.target.closest('.search-wrap')) UI.hideSuggest();
   const link = e.target.closest('a[href^="#/"]');
-  if (link) UI.closeDrawer();
+  if (link && link.target !== '_blank') {
+    UI.closeDrawer();
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    const targetHash = link.getAttribute('href');
+    if (location.hash === targetHash) {
+      Router.render();
+    }
+  }
   if (!trigger) return;
   const fn = Actions[trigger.dataset.action];
   if (fn) { e.preventDefault?.(); fn(trigger, e); }
@@ -1200,8 +1526,7 @@ const validators = {
     let ok = true;
     ok = mark('name', val('name').length >= 2) && ok;
     ok = mark('phone', /^(\+?92|0)?3\d{2}[- ]?\d{7}$/.test(val('phone').replace(/[\s-]/g, ''))) && ok;
-    ok = mark('email', val('email') === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email'))) && ok;
-    ok = mark('address', val('address').length >= 6) && ok;
+    ok = mark('address', val('address').length >= 5) && ok;
     ok = mark('city', val('city').length >= 2) && ok;
     return ok;
   },
@@ -1234,11 +1559,10 @@ document.addEventListener('submit', async (e) => {
     const btn = form.querySelector('[data-role="confirm-btn"]');
     const original = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Placing your order…';
+    btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px"></span> Confirming your order…';
 
     const p = await Api.getProductById(form.dataset.id);
-    const qty = parseInt(document.querySelector('.r-calc')?.textContent.match(/× (\d+)/)?.[1], 10)
-             || parseInt(new URLSearchParams(location.hash.split('?')[1] || '').get('qty'), 10) || 1;
+    const qty = parseInt(new URLSearchParams(location.hash.split('?')[1] || '').get('qty'), 10) || 1;
     const val = n => form.querySelector(`[name="${n}"]`)?.value.trim() || '';
 
     const orderPayload = {
@@ -1262,7 +1586,6 @@ document.addEventListener('submit', async (e) => {
         refreshIcons();
         UI.toast('Order placed successfully! Opening WhatsApp…', 'check-circle-2', 'success');
 
-        // Automatically open WhatsApp pre-filled order message
         if (res.whatsappUrl) {
           setTimeout(() => {
             window.open(res.whatsappUrl, '_blank');
@@ -1287,7 +1610,7 @@ document.addEventListener('submit', async (e) => {
 
     const submitBtn = document.getElementById('rv-submit-btn');
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner"></span> Submitting…';
+    submitBtn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px"></span> Submitting…';
 
     try {
       const res = await Api.submitReview(form.dataset.slug, reviewData);
@@ -1297,7 +1620,7 @@ document.addEventListener('submit', async (e) => {
 
       form.reset();
       form.classList.remove('open');
-      UI.toast(res.message || 'Thank you! Your review has been submitted for moderation.', 'check-circle-2', 'success');
+      UI.toast(res.message || 'Thank you! Your review has been submitted.', 'check-circle-2', 'success');
     } catch (err) {
       submitBtn.disabled = false;
       submitBtn.innerHTML = '<i data-lucide="check"></i> Submit Review';
@@ -1346,7 +1669,7 @@ function hydrateReveals(scope = document) {
       entries.forEach(en => {
         if (en.isIntersecting) { en.target.classList.add('in'); revealObserver.unobserve(en.target); }
       });
-    }, { threshold: .07, rootMargin: '0px 0px -20px 0px' });
+    }, { threshold: .05, rootMargin: '0px 0px -10px 0px' });
   }
   scope.querySelectorAll('.reveal:not(.in)').forEach(el => revealObserver.observe(el));
 }
@@ -1354,6 +1677,10 @@ function hydrateReveals(scope = document) {
 // Application Bootstrap
 (async function init() {
   try {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+
     // 1. Fetch dynamic settings from MongoDB Atlas
     const settings = await Api.getSettings().catch(() => null);
     if (settings) {

@@ -404,6 +404,55 @@
   cursor: pointer;
 }
 
+/* Category Management & Delete Modal Options */
+.cat-delete-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 2px solid var(--line-2);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all .15s ease;
+  margin-bottom: 10px;
+}
+.cat-delete-option:hover {
+  border-color: var(--muted);
+  background: var(--paper-deep);
+}
+.cat-delete-option.active {
+  border-color: var(--accent);
+  background: rgba(209, 74, 14, 0.05);
+}
+.cat-delete-option input[type="radio"] {
+  margin-top: 3px;
+  accent-color: var(--accent);
+  width: 17px;
+  height: 17px;
+}
+.cat-del-title {
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.cat-del-title svg {
+  width: 16px;
+  height: 16px;
+}
+.cat-del-title.danger {
+  color: #DC2626;
+}
+.cat-del-desc {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 /* Responsive Admin */
 @media (max-width: 860px) {
   .admin-layout { grid-template-columns: 1fr; }

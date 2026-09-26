@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const Review = require('../models/Review');
+const Category = require('../models/Category');
 const { requireAdmin } = require('../middleware/auth');
 const { INITIAL_CATEGORIES } = require('../config/seed');
 const { memoryStore } = require('../utils/memoryStore');
@@ -24,24 +25,44 @@ function slugify(text) {
 // GET /api/products/categories
 router.get('/categories', async (req, res) => {
   try {
+    const includeAll = req.query.includeAll === 'true';
     let products = [];
+    let dbCategories = [];
+
     if (mongoose.connection.readyState === 1) {
-      products = await Product.find({ isPublished: true });
+      // Ensure default categories exist if collection empty
+      const count = await Category.countDocuments();
+      if (count === 0) {
+        for (const c of INITIAL_CATEGORIES) {
+          await Category.create(c).catch(() => null);
+        }
+      }
+
+      dbCategories = await Category.find().sort({ createdAt: 1 });
+      products = await Product.find(includeAll ? {} : { isPublished: true });
     } else {
       await memoryStore.init();
-      products = memoryStore.products.filter(p => p.isPublished);
+      dbCategories = memoryStore.categories || INITIAL_CATEGORIES;
+      products = includeAll ? memoryStore.products : memoryStore.products.filter(p => p.isPublished);
     }
 
     const categoryMap = new Map();
+    dbCategories.forEach(c => {
+      categoryMap.set(c.slug, { slug: c.slug, name: c.name, tagline: c.tagline || '', count: 0 });
+    });
+
+    // Also include any INITIAL_CATEGORIES not yet in map just in case
     INITIAL_CATEGORIES.forEach(c => {
-      categoryMap.set(c.slug, { slug: c.slug, name: c.name, tagline: c.tagline, count: 0 });
+      if (!categoryMap.has(c.slug)) {
+        categoryMap.set(c.slug, { slug: c.slug, name: c.name, tagline: c.tagline || '', count: 0 });
+      }
     });
 
     products.forEach(p => {
       if (categoryMap.has(p.category)) {
         const item = categoryMap.get(p.category);
         item.count += 1;
-      } else {
+      } else if (p.category) {
         categoryMap.set(p.category, {
           slug: p.category,
           name: p.categoryName || p.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
@@ -56,6 +77,160 @@ router.get('/categories', async (req, res) => {
   } catch (err) {
     console.error('Get categories error:', err);
     return res.status(500).json({ ok: false, error: 'Failed to fetch categories.' });
+  }
+});
+
+// POST /api/products/categories (Admin Only)
+router.post('/categories', requireAdmin, async (req, res) => {
+  try {
+    const { name, slug: customSlug, tagline } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ ok: false, error: 'Category name is required.' });
+    }
+
+    let slug = customSlug ? slugify(customSlug) : slugify(name);
+    if (!slug) slug = `cat-${Date.now()}`;
+
+    if (mongoose.connection.readyState === 1) {
+      const existingSlug = await Category.findOne({ slug });
+      if (existingSlug) {
+        return res.status(400).json({ ok: false, error: `Category with slug "${slug}" already exists.` });
+      }
+      const existingName = await Category.findOne({ name: new RegExp(`^${name.trim()}$`, 'i') });
+      if (existingName) {
+        return res.status(400).json({ ok: false, error: `Category with name "${name.trim()}" already exists.` });
+      }
+
+      const newCategory = new Category({
+        name: name.trim(),
+        slug,
+        tagline: tagline ? tagline.trim() : ''
+      });
+      await newCategory.save();
+      return res.status(201).json({ ok: true, message: 'Category created successfully', category: newCategory });
+    }
+
+    await memoryStore.init();
+    const existing = memoryStore.categories.find(c => c.slug === slug || c.name.toLowerCase() === name.trim().toLowerCase());
+    if (existing) {
+      return res.status(400).json({ ok: false, error: `Category "${name.trim()}" already exists.` });
+    }
+    const newCategory = {
+      name: name.trim(),
+      slug,
+      tagline: tagline ? tagline.trim() : ''
+    };
+    memoryStore.categories.push(newCategory);
+    return res.status(201).json({ ok: true, message: 'Category created successfully', category: newCategory });
+  } catch (err) {
+    console.error('Create category error:', err);
+    return res.status(500).json({ ok: false, error: err.message || 'Failed to create category.' });
+  }
+});
+
+// DELETE /api/products/categories/:slug (Admin Only)
+router.delete('/categories/:slug', requireAdmin, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { action, targetCategorySlug } = req.body || {};
+
+    if (!slug) {
+      return res.status(400).json({ ok: false, error: 'Category slug is required.' });
+    }
+
+    if (mongoose.connection.readyState === 1) {
+      // Find category
+      const category = await Category.findOne({ slug });
+      const productsInCategory = await Product.find({ category: slug });
+      const prodCount = productsInCategory.length;
+
+      if (prodCount > 0) {
+        if (action === 'shift') {
+          if (!targetCategorySlug || targetCategorySlug === slug) {
+            return res.status(400).json({ ok: false, error: 'Please choose a valid destination category to shift products to.' });
+          }
+          const targetCategory = await Category.findOne({ slug: targetCategorySlug });
+          const targetName = targetCategory ? targetCategory.name : targetCategorySlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+          await Product.updateMany(
+            { category: slug },
+            { $set: { category: targetCategorySlug, categoryName: targetName } }
+          );
+        } else if (action === 'delete') {
+          const productIds = productsInCategory.map(p => p.id);
+          const productSlugs = productsInCategory.map(p => p.slug);
+          await Review.deleteMany({
+            $or: [
+              { productId: { $in: productIds } },
+              { productSlug: { $in: productSlugs } }
+            ]
+          });
+          await Product.deleteMany({ category: slug });
+        } else {
+          return res.status(400).json({
+            ok: false,
+            error: `This category contains ${prodCount} product(s). Please specify whether to "shift" them or permanently "delete" them.`
+          });
+        }
+      }
+
+      if (category) {
+        await Category.findOneAndDelete({ slug });
+      }
+
+      return res.json({
+        ok: true,
+        message: prodCount > 0
+          ? (action === 'shift'
+              ? `Shifted ${prodCount} product(s) to "${targetCategorySlug}" and deleted category "${slug}".`
+              : `Permanently deleted category "${slug}" and all ${prodCount} product(s).`)
+          : `Category "${slug}" deleted successfully.`
+      });
+    }
+
+    // Memory Store fallback
+    await memoryStore.init();
+    const productsInCategory = memoryStore.products.filter(p => p.category === slug);
+    const prodCount = productsInCategory.length;
+
+    if (prodCount > 0) {
+      if (action === 'shift') {
+        if (!targetCategorySlug || targetCategorySlug === slug) {
+          return res.status(400).json({ ok: false, error: 'Please choose a valid destination category to shift products to.' });
+        }
+        const targetCat = memoryStore.categories.find(c => c.slug === targetCategorySlug);
+        const targetName = targetCat ? targetCat.name : targetCategorySlug;
+        memoryStore.products.forEach(p => {
+          if (p.category === slug) {
+            p.category = targetCategorySlug;
+            p.categoryName = targetName;
+          }
+        });
+      } else if (action === 'delete') {
+        const prodIds = productsInCategory.map(p => p.id);
+        const prodSlugs = productsInCategory.map(p => p.slug);
+        memoryStore.reviews = memoryStore.reviews.filter(r => !prodIds.includes(r.productId) && !prodSlugs.includes(r.productSlug));
+        memoryStore.products = memoryStore.products.filter(p => p.category !== slug);
+      } else {
+        return res.status(400).json({
+          ok: false,
+          error: `This category contains ${prodCount} product(s). Please specify whether to "shift" them or permanently "delete" them.`
+        });
+      }
+    }
+
+    memoryStore.categories = (memoryStore.categories || []).filter(c => c.slug !== slug);
+    return res.json({
+      ok: true,
+      message: prodCount > 0
+        ? (action === 'shift'
+            ? `Shifted ${prodCount} product(s) and deleted category.`
+            : `Permanently deleted category and all ${prodCount} product(s).`)
+        : `Category deleted successfully.`
+    });
+  } catch (err) {
+    console.error('Delete category error:', err);
+    return res.status(500).json({ ok: false, error: err.message || 'Failed to delete category.' });
   }
 });
 

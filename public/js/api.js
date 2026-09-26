@@ -211,6 +211,20 @@ const Api = {
     });
   },
 
+  async adminCreateCategory(categoryData) {
+    return this.request('/products/categories', {
+      method: 'POST',
+      body: JSON.stringify(categoryData)
+    });
+  },
+
+  async adminDeleteCategory(slug, { action, targetCategorySlug } = {}) {
+    return this.request(`/products/categories/${encodeURIComponent(slug)}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ action, targetCategorySlug })
+    });
+  },
+
   // -------------------------------------------------------------
   // Admin Orders Management
   // -------------------------------------------------------------

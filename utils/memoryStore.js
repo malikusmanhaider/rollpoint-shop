@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 class MemoryStore {
   constructor() {
     this.products = [];
+    this.categories = [];
     this.orders = [];
     this.reviews = [];
     this.admins = [];
@@ -17,6 +18,7 @@ class MemoryStore {
   async init() {
     if (this.initialized) return;
     const { INITIAL_CATEGORIES } = require('../config/seed');
+    this.categories = INITIAL_CATEGORIES.map(c => ({ ...c }));
 
     // Default settings
     this.settings = {

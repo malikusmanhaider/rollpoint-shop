@@ -2,6 +2,7 @@ const Product = require('../models/Product');
 const Review = require('../models/Review');
 const Admin = require('../models/Admin');
 const Setting = require('../models/Setting');
+const Category = require('../models/Category');
 
 const INITIAL_CATEGORIES = [
   { slug: 'thermal-rolls', name: 'Thermal Rolls', tagline: '80mm & 57mm register rolls' },
@@ -261,7 +262,16 @@ async function seedDatabase() {
       console.log(`✅ Default admin account created: ${adminEmail}`);
     }
 
-    // 3. Seed Products and Reviews if empty
+    // 3. Seed Categories if empty
+    const categoryCount = await Category.countDocuments();
+    if (categoryCount === 0) {
+      for (const cat of INITIAL_CATEGORIES) {
+        await Category.create(cat);
+      }
+      console.log(`✅ Seeded ${INITIAL_CATEGORIES.length} initial categories into database.`);
+    }
+
+    // 4. Seed Products and Reviews if empty
     const productCount = await Product.countDocuments();
     if (productCount === 0) {
       for (const p of INITIAL_PRODUCTS) {

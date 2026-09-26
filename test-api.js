@@ -9,9 +9,22 @@ const BASE_URL = `http://localhost:${PORT}`;
 function request(path, options = {}) {
   return new Promise((resolve, reject) => {
     const url = new URL(path, BASE_URL);
+    const headers = { ...(options.headers || {}) };
+    let payload = null;
+
+    if (options.body) {
+      if (typeof options.body === 'object') {
+        headers['Content-Type'] = 'application/json';
+        payload = JSON.stringify(options.body);
+      } else {
+        payload = String(options.body);
+      }
+      headers['Content-Length'] = Buffer.byteLength(payload);
+    }
+
     const reqOptions = {
       method: options.method || 'GET',
-      headers: options.headers || {},
+      headers,
     };
 
     const req = http.request(url, reqOptions, (res) => {
@@ -29,13 +42,8 @@ function request(path, options = {}) {
 
     req.on('error', reject);
 
-    if (options.body) {
-      if (typeof options.body === 'object') {
-        req.setHeader('Content-Type', 'application/json');
-        req.write(JSON.stringify(options.body));
-      } else {
-        req.write(options.body);
-      }
+    if (payload) {
+      req.write(payload);
     }
 
     req.end();
@@ -159,6 +167,76 @@ async function runTests() {
       }
     });
     assert(updateSettingsRes.status === 200 && updateSettingsRes.data.settings.websiteName === 'RollPoint', 'Admin updated website settings');
+
+    // 12. Admin Category Creation
+    const testCatSlug = `test-cat-${Date.now()}`;
+    const testCatName = `Test Scanners ${Date.now()}`;
+    const createCatRes = await request('/api/products/categories', {
+      method: 'POST',
+      headers: authHeaders,
+      body: {
+        name: testCatName,
+        slug: testCatSlug,
+        tagline: 'Wireless scanners for counters'
+      }
+    });
+    assert(createCatRes.status === 201 && createCatRes.data.category.slug === testCatSlug, 'Admin created new category');
+
+    // 13. Admin Product in New Category
+    const createProdInCatRes = await request('/api/products', {
+      method: 'POST',
+      headers: authHeaders,
+      body: {
+        name: 'Test Scanner Unit',
+        price: 4500,
+        category: testCatSlug,
+        stock: 5
+      }
+    });
+    assert(createProdInCatRes.status === 201 && createProdInCatRes.data.product.category === testCatSlug, 'Product created in new category');
+    const testProdId = createProdInCatRes.data.product.id;
+
+    // 14. Admin Delete Category with Shift Option
+    const shiftDelCatRes = await request(`/api/products/categories/${testCatSlug}`, {
+      method: 'DELETE',
+      headers: authHeaders,
+      body: {
+        action: 'shift',
+        targetCategorySlug: 'other-products'
+      }
+    });
+    assert(shiftDelCatRes.status === 200 && shiftDelCatRes.data.ok === true, 'Admin deleted category with product shift option');
+
+    // 15. Verify Product Shifted
+    const verifyShiftProdRes = await request(`/api/products/id/${testProdId}`);
+    assert(verifyShiftProdRes.status === 200 && verifyShiftProdRes.data.product.category === 'other-products', 'Product category successfully updated to destination category');
+
+    // Cleanup test product
+    await request(`/api/products/${testProdId}`, { method: 'DELETE', headers: authHeaders });
+
+    // 16. Admin Delete Category with Permanent Product Deletion Option
+    const testCatSlug2 = `test-cat-del-${Date.now()}`;
+    await request('/api/products/categories', {
+      method: 'POST',
+      headers: authHeaders,
+      body: { name: `Test Delete Category ${Date.now()}`, slug: testCatSlug2 }
+    });
+    const createProd2 = await request('/api/products', {
+      method: 'POST',
+      headers: authHeaders,
+      body: { name: 'Product to be deleted', price: 100, category: testCatSlug2, stock: 1 }
+    });
+    const prod2Id = createProd2.data.product.id;
+
+    const permDelRes = await request(`/api/products/categories/${testCatSlug2}`, {
+      method: 'DELETE',
+      headers: authHeaders,
+      body: { action: 'delete' }
+    });
+    assert(permDelRes.status === 200 && permDelRes.data.ok === true, 'Admin deleted category with permanent product deletion option');
+
+    const verifyDeletedProd = await request(`/api/products/id/${prod2Id}`);
+    assert(verifyDeletedProd.status === 404, 'Product was permanently deleted along with category');
 
     console.log(`\n=====================================================`);
     console.log(`Test Results: ${passed} passed, ${failed} failed`);

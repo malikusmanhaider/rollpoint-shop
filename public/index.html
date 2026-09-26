@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>RollPoint — Thermal Rolls, Labels & POS Supplies</title>
   <meta name="description" content="RollPoint — thermal rolls, labels and POS supplies delivered across Pakistan. Flat Rs. 250 shipping, cash on delivery.">
 
-  <meta name="theme-color" content="#221B10">
+  <meta name="theme-color" content="#E04F16">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/favicon.png">
 
@@ -26,6 +26,9 @@
 </head>
 <body>
 
+<!-- Top Route Progress Bar -->
+<div id="top-progress-bar"></div>
+
 <noscript><div style="padding:20px;font-family:sans-serif">RollPoint requires JavaScript to browse products and place orders.</div></noscript>
 
 <!-- Announcement strip -->
@@ -40,7 +43,10 @@
 <div class="overlay" id="overlay" data-action="menu-close"></div>
 <aside class="drawer" id="drawer" aria-label="Mobile menu">
   <div class="drawer-head">
-    <span class="brand-name">Roll<em>Point</em></span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <img src="/favicon.png" alt="RollPoint" style="width:30px;height:30px;border-radius:8px">
+      <span class="brand-name">Roll<em>Point</em></span>
+    </div>
     <button class="icon-btn" data-action="menu-close" aria-label="Close menu"><i data-lucide="x"></i></button>
   </div>
   <div class="drawer-body" id="drawer-body"></div>
