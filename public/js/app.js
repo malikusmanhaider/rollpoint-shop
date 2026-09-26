@@ -405,16 +405,8 @@ const Pages = {
         <span><i data-lucide="rotate-ccw"></i> Free Return</span>
       </div>
 
-      <!-- 3. Daraz 6-Icon Navigation Strip -->
+      <!-- 3. Daraz Category Icons Strip -->
       <div class="daraz-icon-grid">
-        <a class="daraz-special-card" href="#/shop">
-          <div class="sc-top">
-            <span class="daraz-special-badge">Coins Deals</span>
-            <b>Earn Coins</b>
-          </div>
-          <span class="sc-link">Click to Collect <i data-lucide="chevron-right" style="width:12px;height:12px"></i></span>
-        </a>
-
         <a class="daraz-icon-card" href="#/category/thermal-rolls">
           <div class="daraz-icon-box yellow">
             <i data-lucide="scroll"></i>
@@ -451,43 +443,7 @@ const Pages = {
         </a>
       </div>
 
-      <!-- 4. Claim Vouchers to Save More Strip -->
-      <div class="daraz-voucher-sec">
-        <div class="daraz-voucher-head">
-          <h4>Claim Vouchers to Save More</h4>
-          <a href="#/shop">More Vouchers <i data-lucide="chevron-right" style="width:13px;height:13px"></i></a>
-        </div>
-        <div class="daraz-voucher-row">
-          <div class="daraz-voucher-item">
-            <span class="d-v-val">4%OFF</span>
-            <span class="d-v-sub">Voucher Max</span>
-          </div>
-          <div class="daraz-voucher-item teal">
-            <span class="d-v-val">Rs.450</span>
-            <span class="d-v-sub">Free shipping</span>
-          </div>
-          <button class="daraz-collect-btn" id="voucher-collect-btn" data-action="collect-vouchers">
-            Collect All
-          </button>
-        </div>
-      </div>
-
-      <!-- 5. Payday Sale Graphic Banner -->
-      <div class="daraz-payday-banner">
-        <div class="payday-left">
-          <span class="payday-badge">EVERY 27TH</span>
-          <span class="payday-title">PAYDAY SALE</span>
-          <div class="payday-tags">
-            <span>FREE DELIVERY</span>
-            <span>UP TO 60% OFF</span>
-          </div>
-        </div>
-        <div class="payday-cart-stamp">
-          <span>ADD TO<br>CART</span>
-        </div>
-      </div>
-
-      <!-- 6. Daraz Fla⚡h Sale Section -->
+      <!-- 4. Daraz Fla⚡h Sale Section -->
       <div class="daraz-flash-sec">
         <div class="daraz-flash-head">
           <div class="df-title-row">
@@ -1141,11 +1097,7 @@ const UI = {
     document.getElementById('site-header').innerHTML = `
       <div class="daraz-header-wrap">
         <div class="daraz-search-row">
-          ${this.searchBox('search-desktop')}
-          <a class="daraz-digital-btn" href="https://wa.me/${BUSINESS.whatsappIntl}" target="_blank" title="Official Store & WhatsApp Orders">
-            <span>OFFICIAL</span>
-            <span>STORE</span>
-          </a>
+          ${this.searchBox('search-main-bar')}
         </div>
       </div>
 

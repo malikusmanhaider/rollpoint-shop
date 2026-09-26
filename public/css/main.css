@@ -2824,10 +2824,19 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+}
+
+.daraz-search-row .search-wrap {
+  width: 100%;
+  max-width: none;
+  flex: 1;
+  display: block !important;
 }
 
 .daraz-search-box {
   flex: 1;
+  width: 100%;
   position: relative;
   display: flex;
   align-items: center;
@@ -3058,9 +3067,10 @@ main {
 .daraz-icon-grid {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  justify-content: space-around;
+  gap: 6px;
   overflow-x: auto;
-  padding: 12px 12px 10px;
+  padding: 12px 6px 10px;
   background: #FFFFFF;
   scrollbar-width: none;
 }
