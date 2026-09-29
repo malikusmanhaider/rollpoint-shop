@@ -404,53 +404,73 @@
   cursor: pointer;
 }
 
-/* Category Management & Delete Modal Options */
-.cat-delete-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 2px solid var(--line-2);
+/* Variations Manager in Product Modal */
+.variation-builder-card {
+  background: var(--paper);
+  border: 1.5px solid var(--line-2);
   border-radius: 12px;
-  background: var(--surface);
-  cursor: pointer;
-  transition: all .15s ease;
+  padding: 14px;
   margin-bottom: 10px;
+  transition: border-color 0.15s ease;
 }
-.cat-delete-option:hover {
-  border-color: var(--muted);
-  background: var(--paper-deep);
+.variation-builder-card:hover {
+  border-color: var(--line);
 }
-.cat-delete-option.active {
-  border-color: var(--accent);
-  background: rgba(209, 74, 14, 0.05);
-}
-.cat-delete-option input[type="radio"] {
-  margin-top: 3px;
-  accent-color: var(--accent);
-  width: 17px;
-  height: 17px;
-}
-.cat-del-title {
-  font-size: 14px;
-  font-weight: 700;
+.var-card-header {
   display: flex;
   align-items: center;
-  gap: 7px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--ink);
-  margin-bottom: 4px;
 }
-.cat-del-title svg {
-  width: 16px;
-  height: 16px;
+.var-card-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
 }
-.cat-del-title.danger {
-  color: #DC2626;
+.var-img-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.cat-del-desc {
-  font-size: 12.5px;
+.var-img-preview-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.var-img-preview-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.var-img-preview-box svg {
+  width: 18px;
+  height: 18px;
   color: var(--muted);
-  line-height: 1.4;
+}
+.var-upload-btn-wrap {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+.var-upload-btn-wrap input[type="file"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
 }
 
 /* Responsive Admin */
@@ -459,9 +479,11 @@
   .admin-sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
   .admin-main { padding: 20px 16px; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
+  .var-card-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 540px) {
   .stats-grid { grid-template-columns: 1fr; }
   .admin-table th:nth-child(3),
   .admin-table td:nth-child(3) { display: none; }
 }
+

@@ -94,7 +94,19 @@ const productSchema = new mongoose.Schema({
   keywords: {
     type: [String],
     default: []
-  }
+  },
+  variationTitle: {
+    type: String,
+    default: 'Color Family',
+    trim: true
+  },
+  variations: [{
+    name: { type: String, required: true, trim: true },
+    price: { type: Number, default: null },
+    oldPrice: { type: Number, default: null },
+    image: { type: String, default: '' },
+    stock: { type: Number, default: null }
+  }]
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

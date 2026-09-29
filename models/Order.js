@@ -6,7 +6,8 @@ const orderItemSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   qty: { type: Number, required: true, min: 1 },
   total: { type: Number, required: true },
-  image: { type: String, default: '' }
+  image: { type: String, default: '' },
+  variation: { type: String, default: '' }
 }, { _id: false });
 
 const orderSchema = new mongoose.Schema({
@@ -47,6 +48,12 @@ const orderSchema = new mongoose.Schema({
   grandTotal: {
     type: Number,
     required: true
+  },
+  // Variation details if selected
+  selectedVariation: {
+    name: { type: String, default: '' },
+    price: { type: Number, default: null },
+    image: { type: String, default: '' }
   },
   // Items array for extended compatibility
   items: [orderItemSchema],

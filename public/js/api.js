@@ -168,6 +168,30 @@ const Api = {
   },
 
   // -------------------------------------------------------------
+  // Admin Categories CRUD
+  // -------------------------------------------------------------
+  async adminCreateCategory(categoryData) {
+    return this.request('/products/categories', {
+      method: 'POST',
+      body: JSON.stringify(categoryData)
+    });
+  },
+
+  async adminUpdateCategory(slug, categoryData) {
+    return this.request(`/products/categories/${encodeURIComponent(slug)}`, {
+      method: 'PUT',
+      body: JSON.stringify(categoryData)
+    });
+  },
+
+  async adminDeleteCategory(slug, options = {}) {
+    return this.request(`/products/categories/${encodeURIComponent(slug)}`, {
+      method: 'DELETE',
+      body: JSON.stringify(options)
+    });
+  },
+
+  // -------------------------------------------------------------
   // Admin Products CRUD
   // -------------------------------------------------------------
   async adminGetProducts(opts = {}) {
@@ -208,20 +232,6 @@ const Api = {
     return this.request(`/products/${id}/stock`, {
       method: 'PATCH',
       body: JSON.stringify({ stock })
-    });
-  },
-
-  async adminCreateCategory(categoryData) {
-    return this.request('/products/categories', {
-      method: 'POST',
-      body: JSON.stringify(categoryData)
-    });
-  },
-
-  async adminDeleteCategory(slug, { action, targetCategorySlug } = {}) {
-    return this.request(`/products/categories/${encodeURIComponent(slug)}`, {
-      method: 'DELETE',
-      body: JSON.stringify({ action, targetCategorySlug })
     });
   },
 

@@ -111,7 +111,8 @@ const AdminUI = {
             <i data-lucide="package"></i> Products
           </div>
           <div class="admin-nav-item ${this.currentTab === 'categories' ? 'active' : ''}" data-tab="categories">
-            <i data-lucide="layers"></i> Categories
+            <i data-lucide="folder-tree"></i> Categories
+            <span class="nav-count" id="nav-categories-count" style="display:none">0</span>
           </div>
           <div class="admin-nav-item ${this.currentTab === 'orders' ? 'active' : ''}" data-tab="orders">
             <i data-lucide="shopping-bag"></i> Orders
@@ -154,9 +155,6 @@ const AdminUI = {
         container.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
         item.classList.add('active');
         this.currentTab = item.dataset.tab;
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
         this.loadTabContent();
       });
     });
@@ -180,11 +178,7 @@ const AdminUI = {
     const tabEl = document.getElementById('admin-tab-content');
     if (!tabEl) return;
 
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-
-    tabEl.innerHTML = `<div style="text-align:center;padding:80px 20px;min-height:65vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px"><span class="spinner" style="border-top-color:var(--accent);width:32px;height:32px"></span><span style="font-size:13px;color:var(--muted)">Loading section…</span></div>`;
+    tabEl.innerHTML = `<div style="text-align:center;padding:50px"><span class="spinner" style="border-top-color:var(--accent);width:28px;height:28px"></span></div>`;
 
     try {
       switch (this.currentTab) {
@@ -208,9 +202,6 @@ const AdminUI = {
           break;
       }
       refreshIcons(tabEl);
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
     } catch (err) {
       tabEl.innerHTML = `<div class="empty-state"><h3>Error loading section</h3><p>${esc(err.message)}</p></div>`;
     }
@@ -233,14 +224,22 @@ const AdminUI = {
       pReviewsBadge.textContent = stats.pendingReviews;
       pReviewsBadge.style.display = stats.pendingReviews > 0 ? 'inline-block' : 'none';
     }
+    const pCatsBadge = document.getElementById('nav-categories-count');
+    if (pCatsBadge && stats.totalCategories !== undefined) {
+      pCatsBadge.textContent = stats.totalCategories;
+      pCatsBadge.style.display = 'inline-block';
+    }
 
     container.innerHTML = `
     <div class="admin-header">
       <div>
         <h1>Dashboard Overview</h1>
-        <p style="color:var(--muted);font-size:14px;margin-top:4px">Real-time statistics across products, orders, and reviews.</p>
+        <p style="color:var(--muted);font-size:14px;margin-top:4px">Real-time statistics across products, categories, orders, and reviews.</p>
       </div>
       <div class="admin-header-actions">
+        <button class="btn btn-outline btn-sm" id="btn-quick-new-category">
+          <i data-lucide="folder-plus"></i> Add Category
+        </button>
         <button class="btn btn-accent btn-sm" id="btn-quick-new-product">
           <i data-lucide="plus"></i> Add Product
         </button>
@@ -256,6 +255,10 @@ const AdminUI = {
         <div class="stat-label"><span>Total Products</span><i data-lucide="package"></i></div>
         <div class="stat-value">${stats.totalProducts}</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-label"><span>Categories</span><i data-lucide="folder-tree"></i></div>
+        <div class="stat-value">${stats.totalCategories !== undefined ? stats.totalCategories : '—'}</div>
+      </div>
       <div class="stat-card gold">
         <div class="stat-label"><span>Pending Orders</span><i data-lucide="clock"></i></div>
         <div class="stat-value">${stats.pendingOrders}</div>
@@ -263,10 +266,6 @@ const AdminUI = {
       <div class="stat-card green">
         <div class="stat-label"><span>Confirmed Orders</span><i data-lucide="check-circle-2"></i></div>
         <div class="stat-value">${stats.confirmedOrders}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label"><span>Delivered Orders</span><i data-lucide="truck"></i></div>
-        <div class="stat-value">${stats.deliveredOrders}</div>
       </div>
       <div class="stat-card">
         <div class="stat-label"><span>Pending Reviews</span><i data-lucide="message-square"></i></div>
@@ -312,6 +311,7 @@ const AdminUI = {
       ` : `<div style="padding:30px;text-align:center;color:var(--muted)">No orders placed yet.</div>`}
     </div>`;
 
+    document.getElementById('btn-quick-new-category')?.addEventListener('click', () => this.openCategoryModal());
     document.getElementById('btn-quick-new-product')?.addEventListener('click', () => this.openProductModal());
     document.getElementById('btn-view-all-orders')?.addEventListener('click', () => {
       this.currentTab = 'orders';
@@ -346,9 +346,6 @@ const AdminUI = {
         <p style="color:var(--muted);font-size:14px;margin-top:4px">Add, edit, change prices, update stock, and publish/unpublish products.</p>
       </div>
       <div class="admin-header-actions">
-        <button class="btn btn-outline btn-sm" id="btn-manage-categories">
-          <i data-lucide="layers"></i> Manage Categories
-        </button>
         <button class="btn btn-accent btn-sm" id="btn-add-product">
           <i data-lucide="plus"></i> Add New Product
         </button>
@@ -371,13 +368,6 @@ const AdminUI = {
         ${this.renderProductsTableHtml(this.productsCache)}
       </div>
     </div>`;
-
-    document.getElementById('btn-manage-categories')?.addEventListener('click', () => {
-      this.currentTab = 'categories';
-      document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
-      document.querySelector('[data-tab="categories"]')?.classList.add('active');
-      this.loadTabContent();
-    });
 
     document.getElementById('btn-add-product')?.addEventListener('click', () => this.openProductModal());
 
@@ -431,6 +421,13 @@ const AdminUI = {
                 <div>
                   <b style="font-size:14px">${esc(p.name)}</b>
                   <div class="mono" style="font-size:11px;color:var(--muted)">ID: ${p.id} · /${p.slug}</div>
+                  ${p.variations && p.variations.length > 0 ? `
+                    <div style="margin-top:3px">
+                      <span class="var-badge-summary" style="font-size:11px">
+                        ${p.variations.length} ${esc(p.variationTitle || 'Variation')}${p.variations.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  ` : ''}
                 </div>
               </div>
             </td>
@@ -522,13 +519,18 @@ const AdminUI = {
   },
 
   // Add / Edit Product Modal
-  openProductModal(prod = null) {
+  async openProductModal(prod = null) {
+    if (!this.categoriesCache || !this.categoriesCache.length) {
+      this.categoriesCache = await Api.getCategories({ includeAll: true }).catch(() => []);
+    }
     const isEdit = Boolean(prod);
     const modal = document.getElementById('admin-modal-content');
     const overlay = document.getElementById('admin-modal-overlay');
 
     let imagesList = prod && prod.images ? [...prod.images] : [];
     let specsMap = prod && prod.specifications ? (prod.specifications instanceof Map ? Object.fromEntries(prod.specifications) : prod.specifications) : {};
+    let variationsList = prod && prod.variations ? JSON.parse(JSON.stringify(prod.variations)) : [];
+    let variationTitle = (prod && prod.variationTitle) || 'Color Family';
 
     modal.innerHTML = `
     <div class="admin-modal-header">
@@ -539,23 +541,10 @@ const AdminUI = {
       <div class="form-grid">
         <div class="field full">
           <label for="pm-name">Product Name *</label>
-          <input id="pm-name" type="text" required value="${esc(prod?.name || '')}" placeholder="e.g. Thermal Roll 80mm × 80m">
+          <input id="pm-name" type="text" required value="${esc(prod?.name || '')}" placeholder="e.g. Pocket Inkless Mini Thermal Printer">
         </div>
         <div class="field">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <label for="pm-category" style="margin:0">Category *</label>
-            <button type="button" class="btn btn-outline btn-sm" id="btn-quick-add-cat" style="font-size:11.5px;padding:2px 8px;gap:4px">
-              <i data-lucide="plus" style="width:12px;height:12px"></i> Add Category
-            </button>
-          </div>
-          <div id="quick-cat-box" style="display:none;background:var(--paper-deep);padding:10px 12px;border-radius:10px;margin-bottom:10px;border:1px solid var(--line-2)">
-            <div style="font-weight:600;font-size:12.5px;margin-bottom:6px;color:var(--ink)">Create New Category</div>
-            <div style="display:flex;gap:6px">
-              <input type="text" id="quick-cat-name-input" placeholder="Category name (e.g. Scanners)" style="flex:1;height:32px;font-size:13px;padding:0 8px;background:var(--surface);border:1px solid var(--line-2);border-radius:6px">
-              <button type="button" class="btn btn-accent btn-sm" id="btn-save-quick-cat" style="font-size:12px;height:32px;padding:0 10px">Save</button>
-              <button type="button" class="btn btn-outline btn-sm" id="btn-cancel-quick-cat" style="font-size:12px;height:32px;padding:0 8px">Cancel</button>
-            </div>
-          </div>
+          <label for="pm-category">Category *</label>
           <select id="pm-category" required>
             ${this.categoriesCache.map(c => `
               <option value="${c.slug}" ${prod?.category === c.slug ? 'selected' : ''}>${esc(c.name)}</option>
@@ -564,15 +553,15 @@ const AdminUI = {
         </div>
         <div class="field">
           <label for="pm-slug">Slug <small>(optional, auto-generated if blank)</small></label>
-          <input id="pm-slug" type="text" value="${esc(prod?.slug || '')}" placeholder="e.g. thermal-roll-80x80">
+          <input id="pm-slug" type="text" value="${esc(prod?.slug || '')}" placeholder="e.g. mini-thermal-printer">
         </div>
         <div class="field">
-          <label for="pm-price">Price (Rs.) *</label>
-          <input id="pm-price" type="number" min="0" required value="${prod?.price || ''}" placeholder="340">
+          <label for="pm-price">Main Price (Rs.) *</label>
+          <input id="pm-price" type="number" min="0" required value="${prod?.price || ''}" placeholder="2499">
         </div>
         <div class="field">
           <label for="pm-oldprice">Old Price (Rs.) <small>(for discount tag)</small></label>
-          <input id="pm-oldprice" type="number" min="0" value="${prod?.oldPrice || ''}" placeholder="420">
+          <input id="pm-oldprice" type="number" min="0" value="${prod?.oldPrice || ''}" placeholder="3200">
         </div>
         <div class="field">
           <label for="pm-stock">Stock Quantity *</label>
@@ -580,7 +569,7 @@ const AdminUI = {
         </div>
         <div class="field">
           <label for="pm-keywords">Keywords <small>(comma separated)</small></label>
-          <input id="pm-keywords" type="text" value="${esc(prod?.keywords?.join(', ') || '')}" placeholder="80mm, receipt roll, bpa free">
+          <input id="pm-keywords" type="text" value="${esc(prod?.keywords?.join(', ') || '')}" placeholder="mini printer, bluetooth, thermal roll">
         </div>
         <div class="field full">
           <label for="pm-short">Short Description</label>
@@ -589,6 +578,28 @@ const AdminUI = {
         <div class="field full">
           <label for="pm-desc">Full Description</label>
           <textarea id="pm-desc" rows="4" placeholder="Detailed product specifications, features, and packing...">${esc(prod?.description || '')}</textarea>
+        </div>
+
+        <!-- DARAZ-STYLE PRODUCT VARIATIONS MANAGER -->
+        <div class="field full" style="border-top:1px solid var(--line);padding-top:18px;margin-top:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+            <div>
+              <label style="font-size:15px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px">
+                <i data-lucide="layers" style="width:18px;height:18px;color:var(--accent)"></i> Product Variations (Daraz Style)
+              </label>
+              <p style="font-size:12.5px;color:var(--muted);margin-top:2px">Set options like "Pink Printer", "Blue Printer" with custom images and specific prices.</p>
+            </div>
+            <button type="button" class="btn btn-accent btn-sm" id="btn-add-var-row">
+              <i data-lucide="plus"></i> Add Variation
+            </button>
+          </div>
+
+          <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
+            <label for="pm-var-title" style="font-size:12.5px;white-space:nowrap;font-weight:600">Variation Title:</label>
+            <input id="pm-var-title" type="text" value="${esc(variationTitle)}" placeholder="e.g. Color Family, Colour Variation, Size, Roll Pack..." style="max-width:320px">
+          </div>
+
+          <div id="variation-rows-container"></div>
         </div>
 
         <!-- Specifications Builder -->
@@ -610,7 +621,7 @@ const AdminUI = {
 
         <!-- Images Manager & Upload -->
         <div class="field full" style="border-top:1px solid var(--line);padding-top:16px;margin-top:8px">
-          <label>Product Images</label>
+          <label>General Product Images</label>
           <div style="display:flex;gap:10px;margin-top:6px">
             <input type="text" id="pm-add-image-url" placeholder="Paste image URL (https://...)" style="flex:1">
             <button type="button" class="btn btn-outline btn-sm" id="btn-add-img-url">Add URL</button>
@@ -657,62 +668,125 @@ const AdminUI = {
     document.getElementById('modal-close-btn').addEventListener('click', () => this.closeModal());
     document.getElementById('modal-cancel-btn').addEventListener('click', () => this.closeModal());
 
-    // Inline Quick Add Category
-    const quickBox = document.getElementById('quick-cat-box');
-    const quickInput = document.getElementById('quick-cat-name-input');
-    const quickBtn = document.getElementById('btn-quick-add-cat');
-    const saveQuickBtn = document.getElementById('btn-save-quick-cat');
-    const cancelQuickBtn = document.getElementById('btn-cancel-quick-cat');
+    // Variations Manager Rendering
+    const renderVariationsList = () => {
+      const varContainer = document.getElementById('variation-rows-container');
+      if (!varContainer) return;
 
-    if (quickBtn && quickBox) {
-      quickBtn.addEventListener('click', () => {
-        quickBox.style.display = quickBox.style.display === 'none' ? 'block' : 'none';
-        if (quickBox.style.display === 'block') quickInput?.focus();
-      });
+      if (!variationsList.length) {
+        varContainer.innerHTML = `
+          <div style="background:var(--paper);border:1.5px dashed var(--line-2);border-radius:10px;padding:16px;text-align:center;color:var(--muted);font-size:13px">
+            No variations added yet. Click <b>"Add Variation"</b> above to add options like Color or Size.
+          </div>`;
+        return;
+      }
 
-      cancelQuickBtn?.addEventListener('click', () => {
-        quickBox.style.display = 'none';
-        if (quickInput) quickInput.value = '';
-      });
+      varContainer.innerHTML = variationsList.map((v, idx) => `
+        <div class="variation-builder-card" data-var-idx="${idx}">
+          <div class="var-card-header">
+            <span>Option #${idx + 1}</span>
+            <button type="button" class="btn-icon-sm danger btn-del-var" data-idx="${idx}" title="Remove variation"><i data-lucide="trash-2"></i></button>
+          </div>
+          <div class="var-card-grid">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Option Name *</label>
+              <input type="text" class="var-name-input" placeholder="e.g. Pink Printer" value="${esc(v.name || '')}">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Price (Rs.) <small>(blank = main price)</small></label>
+              <input type="number" min="0" class="var-price-input" placeholder="e.g. 2499" value="${v.price !== null && v.price !== undefined ? v.price : ''}">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Old Price (Rs.) <small>(optional)</small></label>
+              <input type="number" min="0" class="var-oldprice-input" placeholder="e.g. 3200" value="${v.oldPrice !== null && v.oldPrice !== undefined ? v.oldPrice : ''}">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Variation Image</label>
+            <div class="var-img-row">
+              <div class="var-img-preview-box">
+                ${v.image ? `<img src="${v.image}" alt="">` : `<i data-lucide="image"></i>`}
+              </div>
+              <input type="text" class="var-img-input" placeholder="Paste image URL (https://...) or upload" value="${esc(v.image || '')}" style="flex:1">
+              <label class="btn btn-outline btn-sm var-upload-btn-wrap" style="margin:0;cursor:pointer">
+                <i data-lucide="upload"></i> Upload
+                <input type="file" class="var-file-upload" data-idx="${idx}" accept="image/*">
+              </label>
+            </div>
+          </div>
+        </div>
+      `).join('');
 
-      const handleQuickSave = async () => {
-        const catName = quickInput?.value.trim();
-        if (!catName) {
-          UI.toast('Please enter a category name', 'alert-circle', 'error');
-          return;
-        }
-        saveQuickBtn.disabled = true;
-        saveQuickBtn.textContent = '…';
-        try {
-          const res = await Api.adminCreateCategory({ name: catName });
-          this.categoriesCache.push(res.category);
-          const sel = document.getElementById('pm-category');
-          if (sel) {
-            const opt = document.createElement('option');
-            opt.value = res.category.slug;
-            opt.textContent = res.category.name;
-            opt.selected = true;
-            sel.appendChild(opt);
+      refreshIcons(varContainer);
+
+      // Bind input events to keep state
+      varContainer.querySelectorAll('.variation-builder-card').forEach(card => {
+        const idx = parseInt(card.dataset.varIdx, 10);
+        const nameInput = card.querySelector('.var-name-input');
+        const priceInput = card.querySelector('.var-price-input');
+        const oldPriceInput = card.querySelector('.var-oldprice-input');
+        const imgInput = card.querySelector('.var-img-input');
+        const fileInput = card.querySelector('.var-file-upload');
+        const previewBox = card.querySelector('.var-img-preview-box');
+
+        nameInput.addEventListener('input', (e) => {
+          variationsList[idx].name = e.target.value;
+        });
+        priceInput.addEventListener('input', (e) => {
+          variationsList[idx].price = e.target.value !== '' ? parseFloat(e.target.value) : null;
+        });
+        oldPriceInput.addEventListener('input', (e) => {
+          variationsList[idx].oldPrice = e.target.value !== '' ? parseFloat(e.target.value) : null;
+        });
+        imgInput.addEventListener('input', (e) => {
+          const val = e.target.value.trim();
+          variationsList[idx].image = val;
+          previewBox.innerHTML = val ? `<img src="${val}" alt="">` : `<i data-lucide="image"></i>`;
+          refreshIcons(previewBox);
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          try {
+            UI.toast('Uploading variation image…');
+            const res = await Api.adminUploadImage(file);
+            if (res.ok && res.url) {
+              variationsList[idx].image = res.url;
+              imgInput.value = res.url;
+              previewBox.innerHTML = `<img src="${res.url}" alt="">`;
+              UI.toast('Variation image uploaded!');
+            }
+          } catch (err) {
+            UI.toast(err.message || 'Upload failed', 'alert-circle', 'error');
           }
-          quickBox.style.display = 'none';
-          if (quickInput) quickInput.value = '';
-          UI.toast(`Category "${res.category.name}" added and selected!`, 'check-circle-2', 'success');
-        } catch (err) {
-          UI.toast(err.message || 'Failed to create category', 'alert-circle', 'error');
-        } finally {
-          saveQuickBtn.disabled = false;
-          saveQuickBtn.textContent = 'Save';
-        }
-      };
-
-      saveQuickBtn?.addEventListener('click', handleQuickSave);
-      quickInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleQuickSave();
-        }
+        });
       });
-    }
+
+      // Bind delete variation button
+      varContainer.querySelectorAll('.btn-del-var').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx, 10);
+          variationsList.splice(idx, 1);
+          renderVariationsList();
+        });
+      });
+    };
+
+    renderVariationsList();
+
+    // Add variation button
+    document.getElementById('btn-add-var-row').addEventListener('click', () => {
+      variationsList.push({
+        name: '',
+        price: null,
+        oldPrice: null,
+        image: ''
+      });
+      renderVariationsList();
+      const lastInput = document.querySelector('#variation-rows-container .variation-builder-card:last-child .var-name-input');
+      if (lastInput) lastInput.focus();
+    });
 
     // Add spec row
     document.getElementById('btn-add-spec-row').addEventListener('click', () => {
@@ -792,6 +866,7 @@ const AdminUI = {
       const description = document.getElementById('pm-desc').value.trim();
       const isPublished = document.getElementById('pm-published').checked;
       const featured = document.getElementById('pm-featured').checked;
+      const varTitle = document.getElementById('pm-var-title')?.value.trim() || 'Color Family';
 
       if (!name || isNaN(price) || !category) {
         UI.toast('Please fill in Name, Price, and Category.', 'alert-circle', 'error');
@@ -806,6 +881,16 @@ const AdminUI = {
         if (k && v) specifications[k] = v;
       });
 
+      // Filter valid variations
+      const cleanVariations = variationsList
+        .filter(v => v.name && v.name.trim().length > 0)
+        .map(v => ({
+          name: v.name.trim(),
+          price: v.price !== null && v.price !== undefined && !isNaN(Number(v.price)) ? Number(v.price) : null,
+          oldPrice: v.oldPrice !== null && v.oldPrice !== undefined && !isNaN(Number(v.oldPrice)) ? Number(v.oldPrice) : null,
+          image: (v.image || '').trim()
+        }));
+
       const payload = {
         name,
         category,
@@ -819,7 +904,9 @@ const AdminUI = {
         specifications,
         images: imagesList.length ? imagesList : undefined,
         isPublished,
-        featured
+        featured,
+        variationTitle: varTitle,
+        variations: cleanVariations
       };
 
       const saveBtn = document.getElementById('modal-save-prod-btn');
@@ -845,38 +932,28 @@ const AdminUI = {
     });
   },
 
-  closeModal() {
-    document.getElementById('admin-modal-overlay').classList.remove('show');
-  },
-
   // -------------------------------------------------------------
   // TAB: Categories Management
   // -------------------------------------------------------------
   async renderTabCategories(container) {
-    const [cats, prodsRes] = await Promise.all([
-      Api.getCategories({ includeAll: true }),
-      Api.adminGetProducts()
-    ]);
-    this.categoriesCache = cats || [];
-    this.productsCache = prodsRes.products || [];
+    const catsRes = await Api.getCategories({ includeAll: true });
+    this.categoriesCache = catsRes || [];
 
-    // Compute live count of products in each category
-    const countMap = {};
-    this.productsCache.forEach(p => {
-      countMap[p.category] = (countMap[p.category] || 0) + 1;
-    });
-    this.categoriesCache.forEach(c => {
-      c.count = countMap[c.slug] || 0;
-    });
+    // Update sidebar categories badge
+    const pCatsBadge = document.getElementById('nav-categories-count');
+    if (pCatsBadge) {
+      pCatsBadge.textContent = this.categoriesCache.length;
+      pCatsBadge.style.display = 'inline-block';
+    }
 
     container.innerHTML = `
     <div class="admin-header">
       <div>
         <h1>Categories Management</h1>
-        <p style="color:var(--muted);font-size:14px;margin-top:4px">Create categories, monitor product counts, and delete categories with product migration or removal.</p>
+        <p style="color:var(--muted);font-size:14px;margin-top:4px">Create, rename, or permanently delete product categories and manage item reassignments.</p>
       </div>
       <div class="admin-header-actions">
-        <button class="btn btn-accent btn-sm" id="btn-add-cat-view">
+        <button class="btn btn-accent btn-sm" id="btn-add-category">
           <i data-lucide="plus"></i> Add New Category
         </button>
       </div>
@@ -884,7 +961,10 @@ const AdminUI = {
 
     <div class="admin-table-wrap">
       <div class="admin-table-header">
-        <span style="font-size:14px;font-weight:600">All Categories (<span id="cat-total-count">${this.categoriesCache.length}</span>)</span>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;flex:1">
+          <input type="search" class="admin-search-input" id="admin-cat-search" placeholder="Search categories by name, slug, or tagline…">
+        </div>
+        <span style="font-size:13px;color:var(--muted)">Total: <b id="cat-total-count">${this.categoriesCache.length}</b> categories</span>
       </div>
 
       <div id="admin-categories-table-body">
@@ -892,7 +972,21 @@ const AdminUI = {
       </div>
     </div>`;
 
-    document.getElementById('btn-add-cat-view')?.addEventListener('click', () => this.openAddCategoryModal());
+    document.getElementById('btn-add-category')?.addEventListener('click', () => this.openCategoryModal());
+
+    const searchInput = document.getElementById('admin-cat-search');
+    const filterCategories = () => {
+      const q = searchInput.value.toLowerCase().trim();
+      const filtered = this.categoriesCache.filter(c => {
+        return !q || c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q) || (c.tagline && c.tagline.toLowerCase().includes(q));
+      });
+      document.getElementById('admin-categories-table-body').innerHTML = this.renderCategoriesTableHtml(filtered);
+      document.getElementById('cat-total-count').textContent = filtered.length;
+      refreshIcons(document.getElementById('admin-categories-table-body'));
+      this.bindCategoryTableActions();
+    };
+
+    searchInput.addEventListener('input', debounce(filterCategories, 160));
     this.bindCategoryTableActions();
   },
 
@@ -906,9 +1000,9 @@ const AdminUI = {
       <thead>
         <tr>
           <th>Category Name</th>
-          <th>Slug</th>
+          <th>Slug / URL</th>
           <th>Tagline / Description</th>
-          <th>Total Products</th>
+          <th>Products Count</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -916,23 +1010,33 @@ const AdminUI = {
         ${categories.map(c => `
           <tr>
             <td>
-              <b style="font-size:14.5px;color:var(--ink)">${esc(c.name)}</b>
+              <div style="display:flex;align-items:center;gap:12px">
+                ${c.image ? `
+                  <img src="${c.image}" alt="${esc(c.name)}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--line);flex-shrink:0" loading="lazy">
+                ` : `
+                  <div style="width:40px;height:40px;border-radius:8px;background:var(--paper-deep);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0">
+                    <i data-lucide="folder"></i>
+                  </div>
+                `}
+                <div>
+                  <b style="font-size:14.5px;display:block">${esc(c.name)}</b>
+                </div>
+              </div>
             </td>
             <td>
-              <span class="mono" style="font-size:12px;background:var(--paper-deep);padding:3px 8px;border-radius:4px">/${esc(c.slug)}</span>
+              <span class="mono" style="font-size:12px;background:var(--paper-deep);padding:3px 8px;border-radius:6px">/${esc(c.slug)}</span>
             </td>
             <td>
-              <span style="font-size:13px;color:var(--muted)">${esc(c.tagline || '—')}</span>
+              <span style="color:var(--muted);font-size:13px">${esc(c.tagline || '—')}</span>
             </td>
             <td>
-              <span style="font-family:var(--fm);font-size:12px;padding:4px 10px;border-radius:999px;background:${c.count > 0 ? 'rgba(209,74,14,0.12)' : 'var(--paper-deep)'};color:${c.count > 0 ? 'var(--accent)' : 'var(--muted)'};font-weight:700">
-                ${c.count} ${c.count === 1 ? 'Product' : 'Products'}
-              </span>
+              <span class="status-pill ${c.count > 0 ? 'approved' : 'pending'}">${c.count} Product${c.count !== 1 ? 's' : ''}</span>
             </td>
             <td>
               <div class="table-actions">
-                <a class="btn-icon-sm" href="#/category/${c.slug}" target="_blank" title="View category on storefront"><i data-lucide="external-link"></i></a>
-                <button class="btn-icon-sm danger" data-action="delete-category" data-slug="${c.slug}" data-name="${esc(c.name)}" data-count="${c.count}" title="Delete category"><i data-lucide="trash-2"></i></button>
+                <button class="btn-icon-sm" data-action="edit-category" data-slug="${c.slug}" title="Edit Category"><i data-lucide="edit-3"></i></button>
+                <a class="btn-icon-sm" href="#/category/${c.slug}" target="_blank" title="View category page in store"><i data-lucide="external-link"></i></a>
+                <button class="btn-icon-sm danger" data-action="delete-category" data-slug="${c.slug}" title="Delete Category"><i data-lucide="trash-2"></i></button>
               </div>
             </td>
           </tr>
@@ -945,285 +1049,312 @@ const AdminUI = {
     const table = document.getElementById('admin-categories-table-body');
     if (!table) return;
 
+    table.querySelectorAll('[data-action="edit-category"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cat = this.categoriesCache.find(c => c.slug === btn.dataset.slug);
+        if (cat) this.openCategoryModal(cat);
+      });
+    });
+
     table.querySelectorAll('[data-action="delete-category"]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const slug = btn.dataset.slug;
-        const name = btn.dataset.name;
-        const count = parseInt(btn.dataset.count, 10) || 0;
-        this.openDeleteCategoryModal(slug, name, count);
+        const cat = this.categoriesCache.find(c => c.slug === btn.dataset.slug);
+        if (cat) this.openDeleteCategoryModal(cat);
       });
     });
   },
 
-  openAddCategoryModal(onSuccessCallback = null) {
+  openCategoryModal(cat = null) {
+    const isEdit = Boolean(cat);
     const modal = document.getElementById('admin-modal-content');
     const overlay = document.getElementById('admin-modal-overlay');
+    let currentImage = cat?.image || '';
 
     modal.innerHTML = `
     <div class="admin-modal-header">
-      <h3>Add New Category</h3>
-      <button class="icon-btn" id="cat-modal-close-btn"><i data-lucide="x"></i></button>
+      <h3>${isEdit ? 'Edit Category' : 'Add New Category'}</h3>
+      <button class="icon-btn" id="modal-close-btn"><i data-lucide="x"></i></button>
     </div>
-    <form id="category-create-form" class="admin-modal-body">
+    <form id="category-edit-form" class="admin-modal-body" novalidate>
       <div class="form-grid">
         <div class="field full">
-          <label for="cat-name">Category Name *</label>
-          <input id="cat-name" type="text" required placeholder="e.g. Barcode Scanners" autofocus>
+          <label for="cm-name">Category Name *</label>
+          <input id="cm-name" type="text" required value="${esc(cat?.name || '')}" placeholder="e.g. Thermal Paper Rolls">
         </div>
         <div class="field full">
-          <label for="cat-slug">Slug <small>(optional, auto-generated from name)</small></label>
-          <input id="cat-slug" type="text" placeholder="e.g. barcode-scanners">
+          <label for="cm-slug">URL Slug <small>(auto-generated from name if left blank)</small></label>
+          <input id="cm-slug" type="text" value="${esc(cat?.slug || '')}" placeholder="e.g. thermal-paper-rolls">
+          <div class="mono" style="font-size:11.5px;color:var(--muted);margin-top:5px">
+            Store URL: <b>#/category/<span id="cm-slug-preview">${esc(cat?.slug || 'category-slug')}</span></b>
+          </div>
         </div>
         <div class="field full">
-          <label for="cat-tagline">Tagline / Short description <small>(optional)</small></label>
-          <input id="cat-tagline" type="text" placeholder="e.g. 1D &amp; 2D wireless handheld scanners">
+          <label for="cm-tagline">Tagline / Short Description <small>(optional subtitle)</small></label>
+          <input id="cm-tagline" type="text" value="${esc(cat?.tagline || '')}" placeholder="e.g. Genuine BPA-free thermal rolls for counter cash registers">
+        </div>
+
+        <!-- CATEGORY IMAGE CONTROLLER -->
+        <div class="field full" style="border-top:1px solid var(--line);padding-top:16px;margin-top:8px">
+          <label style="font-weight:700;font-size:14px;color:var(--ink);display:flex;align-items:center;gap:6px">
+            <i data-lucide="image" style="width:16px;height:16px;color:var(--accent)"></i> Category Card Image (Square 1:1)
+          </label>
+          <p style="font-size:12.5px;color:var(--muted);margin:2px 0 10px">This image appears in the "Shop by Category" square cards on the homepage.</p>
+          
+          <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+            <div id="cm-img-preview-box" style="width:100px;height:100px;border-radius:12px;border:2px dashed var(--line-2);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--paper-deep);flex-shrink:0;position:relative">
+              ${currentImage ? `<img id="cm-preview-img" src="${currentImage}" alt="Category Image" style="width:100%;height:100%;object-fit:cover">` : `<span style="font-size:11px;color:var(--muted);text-align:center;padding:4px"><i data-lucide="image" style="width:24px;height:24px;display:block;margin:0 auto 4px"></i>No Image</span>`}
+            </div>
+            <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;gap:8px">
+                <input id="cm-image-url" type="url" placeholder="Paste image URL (https://...)" value="${esc(currentImage)}" style="flex:1">
+                <button type="button" class="btn btn-outline btn-sm" id="cm-apply-url-btn" title="Apply URL">Apply</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">
+                  <i data-lucide="upload"></i> Upload Image
+                  <input type="file" id="cm-file-upload" accept="image/*" style="display:none">
+                </label>
+                <button type="button" class="btn btn-sm" id="cm-remove-img-btn" style="color:var(--red);background:transparent;border:none;cursor:pointer;display:${currentImage ? 'inline-flex' : 'none'};align-items:center;gap:4px">
+                  <i data-lucide="trash-2" style="width:14px;height:14px"></i> Remove Image
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </form>
     <div class="admin-modal-footer">
-      <button class="btn btn-outline" id="cat-modal-cancel-btn">Cancel</button>
-      <button class="btn btn-accent" id="btn-save-new-category">
-        <i data-lucide="plus"></i> Create Category
+      <button class="btn btn-outline" id="modal-cancel-btn">Cancel</button>
+      <button class="btn btn-accent" id="modal-save-cat-btn">
+        <i data-lucide="check"></i> ${isEdit ? 'Save Changes' : 'Create Category'}
       </button>
     </div>`;
 
     overlay.classList.add('show');
     refreshIcons(modal);
 
-    const close = () => this.closeModal();
-    document.getElementById('cat-modal-close-btn').addEventListener('click', close);
-    document.getElementById('cat-modal-cancel-btn').addEventListener('click', close);
+    document.getElementById('modal-close-btn').addEventListener('click', () => this.closeModal());
+    document.getElementById('modal-cancel-btn').addEventListener('click', () => this.closeModal());
 
-    const form = document.getElementById('category-create-form');
-    const saveBtn = document.getElementById('btn-save-new-category');
+    const nameInput = document.getElementById('cm-name');
+    const slugInput = document.getElementById('cm-slug');
+    const slugPreview = document.getElementById('cm-slug-preview');
+    const imgUrlInput = document.getElementById('cm-image-url');
+    const previewBox = document.getElementById('cm-img-preview-box');
+    const removeImgBtn = document.getElementById('cm-remove-img-btn');
 
-    const handleSave = async (e) => {
-      e?.preventDefault();
-      const name = document.getElementById('cat-name').value.trim();
-      const slug = document.getElementById('cat-slug').value.trim();
-      const tagline = document.getElementById('cat-tagline').value.trim();
+    const updateImgPreview = (url) => {
+      currentImage = url.trim();
+      imgUrlInput.value = currentImage;
+      if (currentImage) {
+        previewBox.innerHTML = `<img id="cm-preview-img" src="${currentImage}" alt="Category Image" style="width:100%;height:100%;object-fit:cover">`;
+        removeImgBtn.style.display = 'inline-flex';
+      } else {
+        previewBox.innerHTML = `<span style="font-size:11px;color:var(--muted);text-align:center;padding:4px"><i data-lucide="image" style="width:24px;height:24px;display:block;margin:0 auto 4px"></i>No Image</span>`;
+        removeImgBtn.style.display = 'none';
+        refreshIcons(previewBox);
+      }
+    };
+
+    document.getElementById('cm-apply-url-btn').addEventListener('click', () => {
+      updateImgPreview(imgUrlInput.value);
+    });
+    imgUrlInput.addEventListener('change', () => {
+      updateImgPreview(imgUrlInput.value);
+    });
+
+    document.getElementById('cm-file-upload').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        UI.toast('Uploading category image…');
+        const res = await Api.adminUploadImage(file);
+        if (res.ok && res.url) {
+          updateImgPreview(res.url);
+          UI.toast('Category image uploaded successfully!');
+        }
+      } catch (err) {
+        UI.toast(err.message || 'Upload failed', 'alert-circle', 'error');
+      }
+    });
+
+    removeImgBtn.addEventListener('click', () => {
+      updateImgPreview('');
+    });
+
+    const slugifyStr = (text) => text.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-');
+
+    if (!isEdit) {
+      nameInput.addEventListener('input', () => {
+        if (!slugInput.dataset.manual) {
+          const s = slugifyStr(nameInput.value);
+          slugInput.value = s;
+          slugPreview.textContent = s || 'category-slug';
+        }
+      });
+      slugInput.addEventListener('input', () => {
+        slugInput.dataset.manual = 'true';
+        slugPreview.textContent = slugifyStr(slugInput.value) || 'category-slug';
+      });
+    } else {
+      slugInput.addEventListener('input', () => {
+        slugPreview.textContent = slugifyStr(slugInput.value) || 'category-slug';
+      });
+    }
+
+    document.getElementById('modal-save-cat-btn').addEventListener('click', async () => {
+      const name = nameInput.value.trim();
+      const slugVal = slugInput.value.trim();
+      const tagline = document.getElementById('cm-tagline').value.trim();
+      const image = currentImage;
 
       if (!name) {
-        UI.toast('Category name is required', 'alert-circle', 'error');
+        UI.toast('Please enter a category name.', 'alert-circle', 'error');
+        nameInput.focus();
         return;
       }
 
+      const saveBtn = document.getElementById('modal-save-cat-btn');
       saveBtn.disabled = true;
-      saveBtn.innerHTML = '<span class="spinner"></span> Creating…';
+      saveBtn.innerHTML = '<span class="spinner"></span> Saving…';
 
       try {
-        const res = await Api.adminCreateCategory({ name, slug, tagline });
-        UI.toast(`Category "${res.category.name}" created!`, 'check-circle-2', 'success');
+        if (isEdit) {
+          const res = await Api.adminUpdateCategory(cat.slug, {
+            name,
+            slug: slugVal,
+            tagline,
+            image
+          });
+          UI.toast(res.message || 'Category updated successfully!', 'check-circle-2', 'success');
+        } else {
+          const res = await Api.adminCreateCategory({
+            name,
+            slug: slugVal,
+            tagline,
+            image
+          });
+          UI.toast(res.message || 'Category created successfully!', 'check-circle-2', 'success');
+        }
+
+        this.categoriesCache = await Api.getCategories({ includeAll: true });
         this.closeModal();
-
-        const updatedCats = await Api.getCategories({ includeAll: true });
-        this.categoriesCache = updatedCats || [];
-
-        if (onSuccessCallback) {
-          onSuccessCallback(res.category);
-        } else if (this.currentTab === 'categories') {
+        if (this.currentTab === 'categories') {
           this.loadTabContent();
         }
       } catch (err) {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i data-lucide="plus"></i> Create Category';
+        saveBtn.innerHTML = `<i data-lucide="check"></i> ${isEdit ? 'Save Changes' : 'Create Category'}`;
         refreshIcons(saveBtn);
-        UI.toast(err.message || 'Failed to create category', 'alert-circle', 'error');
+        UI.toast(err.message || 'Failed to save category', 'alert-circle', 'error');
       }
-    };
-
-    form.addEventListener('submit', handleSave);
-    saveBtn.addEventListener('click', handleSave);
+    });
   },
 
-  openDeleteCategoryModal(slug, name, count) {
+  openDeleteCategoryModal(cat) {
     const modal = document.getElementById('admin-modal-content');
     const overlay = document.getElementById('admin-modal-overlay');
-
-    const otherCategories = (this.categoriesCache || []).filter(c => c.slug !== slug);
-
-    if (count === 0) {
-      modal.innerHTML = `
-      <div class="admin-modal-header">
-        <h3>Delete Category</h3>
-        <button class="icon-btn" id="del-cat-close-btn"><i data-lucide="x"></i></button>
-      </div>
-      <div class="admin-modal-body" style="padding:24px 28px">
-        <p style="font-size:15px;color:var(--ink);margin-bottom:8px">Are you sure you want to delete category <strong>"${esc(name)}"</strong>?</p>
-        <p style="font-size:13.5px;color:var(--muted)">This category currently has 0 products and can be safely deleted.</p>
-      </div>
-      <div class="admin-modal-footer">
-        <button class="btn btn-outline" id="btn-cancel-del-cat">Cancel</button>
-        <button class="btn btn-danger" id="btn-confirm-cat-action">
-          <i data-lucide="trash-2"></i> Delete Category
-        </button>
-      </div>`;
-
-      overlay.classList.add('show');
-      refreshIcons(modal);
-
-      document.getElementById('del-cat-close-btn').addEventListener('click', () => this.closeModal());
-      document.getElementById('btn-cancel-del-cat').addEventListener('click', () => this.closeModal());
-
-      const confirmBtn = document.getElementById('btn-confirm-cat-action');
-      confirmBtn.addEventListener('click', async () => {
-        confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<span class="spinner"></span> Deleting…';
-        try {
-          const res = await Api.adminDeleteCategory(slug, { action: 'delete' });
-          UI.toast(res.message || `Category "${name}" deleted`, 'check-circle-2', 'success');
-          this.closeModal();
-
-          const [updatedCats, prodsRes] = await Promise.all([
-            Api.getCategories({ includeAll: true }),
-            Api.adminGetProducts()
-          ]);
-          this.categoriesCache = updatedCats || [];
-          this.productsCache = prodsRes.products || [];
-          this.loadTabContent();
-        } catch (err) {
-          confirmBtn.disabled = false;
-          confirmBtn.innerHTML = '<i data-lucide="trash-2"></i> Delete Category';
-          refreshIcons(confirmBtn);
-          UI.toast(err.message || 'Failed to delete category', 'alert-circle', 'error');
-        }
-      });
-      return;
-    }
-
-    // Category HAS products: show option to permanently delete products or shift them
-    const canShift = otherCategories.length > 0;
-    const defaultAction = canShift ? 'shift' : 'delete';
+    const prodCount = cat.count || 0;
+    const otherCategories = this.categoriesCache.filter(c => c.slug !== cat.slug);
 
     modal.innerHTML = `
     <div class="admin-modal-header">
-      <h3>Delete Category: ${esc(name)}</h3>
-      <button class="icon-btn" id="del-cat-close-btn"><i data-lucide="x"></i></button>
+      <h3 style="color:var(--red)"><i data-lucide="alert-triangle" style="width:20px;height:20px;display:inline-block;vertical-align:-3px;margin-right:6px"></i> Delete Category</h3>
+      <button class="icon-btn" id="modal-close-btn"><i data-lucide="x"></i></button>
     </div>
-    <div class="admin-modal-body" style="padding:22px 26px">
-      <div style="background:rgba(209,74,14,0.08);border:1px solid rgba(209,74,14,0.22);border-radius:12px;padding:12px 16px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start">
-        <i data-lucide="alert-triangle" style="width:20px;height:20px;color:var(--accent);flex-shrink:0;margin-top:2px"></i>
-        <div style="font-size:13.5px;line-height:1.5">
-          Category <strong>"${esc(name)}"</strong> currently contains <strong>${count} product(s)</strong>.
-          <br>Please select what should happen to these products:
-        </div>
-      </div>
+    <div class="admin-modal-body">
+      <p style="font-size:15px;margin-bottom:14px">
+        Are you sure you want to permanently delete category <b>${esc(cat.name)}</b> (<code class="mono">/${esc(cat.slug)}</code>)?
+      </p>
 
-      <div style="display:flex;flex-direction:column;gap:10px">
-        ${canShift ? `
-          <label class="cat-delete-option ${defaultAction === 'shift' ? 'active' : ''}" id="opt-shift-card">
-            <input type="radio" name="cat-del-action" value="shift" ${defaultAction === 'shift' ? 'checked' : ''}>
-            <div>
-              <div class="cat-del-title"><i data-lucide="arrow-right-left"></i> Shift Products to Another Category</div>
-              <div class="cat-del-desc">Keep all ${count} product(s) safe by moving them into another category before deleting "${esc(name)}".</div>
+      ${prodCount > 0 ? `
+        <div style="background:#FFF3E0;border:1px solid #FFE0B2;border-radius:10px;padding:14px;margin-bottom:18px">
+          <b style="color:#E65100;display:block;margin-bottom:4px">⚠️ Notice: This category contains ${prodCount} product(s)</b>
+          <p style="font-size:13px;color:#795548;margin:0">Please choose how you want to handle the products currently assigned to this category:</p>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px">
+          ${otherCategories.length > 0 ? `
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;background:var(--paper);padding:14px;border-radius:10px;border:1px solid var(--line)">
+            <input type="radio" name="del-cat-action" value="shift" checked style="margin-top:3px;width:18px;height:18px">
+            <div style="flex:1">
+              <b style="font-size:14px">Move all ${prodCount} product(s) to another category (Recommended)</b>
+              <p style="font-size:12.5px;color:var(--muted);margin:3px 0 8px">Products will not be deleted; their category will be changed.</p>
+              <div>
+                <select id="del-cat-target-slug" class="admin-filter-select" style="width:100%;max-width:340px">
+                  ${otherCategories.map(oc => `
+                    <option value="${oc.slug}">${esc(oc.name)} (/${oc.slug})</option>
+                  `).join('')}
+                </select>
+              </div>
             </div>
           </label>
-        ` : `
-          <div style="font-size:13px;color:var(--muted);padding:8px 4px">
-            <em>(No other categories exist to shift products into. Create another category first if you want to keep these products.)</em>
-          </div>
-        `}
+          ` : ''}
 
-        <label class="cat-delete-option ${defaultAction === 'delete' ? 'active' : ''}" id="opt-delete-card">
-          <input type="radio" name="cat-del-action" value="delete" ${defaultAction === 'delete' ? 'checked' : ''}>
-          <div>
-            <div class="cat-del-title danger"><i data-lucide="trash-2"></i> Permanently Delete Products</div>
-            <div class="cat-del-desc">Permanently remove all ${count} product(s) and their reviews from your database.</div>
-          </div>
-        </label>
-      </div>
-
-      ${canShift ? `
-        <div id="shift-target-container" style="margin-top:16px;background:var(--paper-deep);padding:14px;border-radius:10px;border:1px solid var(--line-2);display:${defaultAction === 'shift' ? 'block' : 'none'}">
-          <label for="shift-target-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;color:var(--ink)">
-            Select Destination Category for the ${count} product(s):
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;background:rgba(198,40,40,0.04);padding:14px;border-radius:10px;border:1px solid rgba(198,40,40,0.25)">
+            <input type="radio" name="del-cat-action" value="delete" ${otherCategories.length === 0 ? 'checked' : ''} style="margin-top:3px;width:18px;height:18px">
+            <div>
+              <b style="color:var(--red);font-size:14px">Permanently delete category AND all ${prodCount} product(s)</b>
+              <p style="font-size:12.5px;color:var(--muted);margin-top:3px">All ${prodCount} products and their customer reviews will be permanently erased from the store and database.</p>
+            </div>
           </label>
-          <select id="shift-target-select" style="width:100%;height:40px;border:1px solid var(--line-2);border-radius:8px;padding:0 12px;font-size:14px;background:var(--surface)">
-            ${otherCategories.map(c => `
-              <option value="${c.slug}">${esc(c.name)} (${c.count || 0} products)</option>
-            `).join('')}
-          </select>
         </div>
-      ` : ''}
+      ` : `
+        <p style="color:var(--muted);font-size:13.5px">This category has 0 products and can be deleted safely.</p>
+      `}
     </div>
     <div class="admin-modal-footer">
-      <button class="btn btn-outline" id="btn-cancel-del-cat">Cancel</button>
-      <button class="btn ${defaultAction === 'shift' ? 'btn-accent' : 'btn-danger'}" id="btn-confirm-cat-action">
-        ${defaultAction === 'shift' 
-          ? '<i data-lucide="arrow-right-left"></i> Shift Products &amp; Delete Category'
-          : '<i data-lucide="trash-2"></i> Permanently Delete Category &amp; Products'}
+      <button class="btn btn-outline" id="modal-cancel-btn">Cancel</button>
+      <button class="btn btn-ink danger" id="modal-confirm-del-cat-btn" style="background:var(--red);color:#fff;border-color:var(--red)">
+        <i data-lucide="trash-2"></i> Permanently Delete
       </button>
     </div>`;
 
     overlay.classList.add('show');
     refreshIcons(modal);
 
-    document.getElementById('del-cat-close-btn').addEventListener('click', () => this.closeModal());
-    document.getElementById('btn-cancel-del-cat').addEventListener('click', () => this.closeModal());
+    document.getElementById('modal-close-btn').addEventListener('click', () => this.closeModal());
+    document.getElementById('modal-cancel-btn').addEventListener('click', () => this.closeModal());
 
-    const shiftCard = document.getElementById('opt-shift-card');
-    const deleteCard = document.getElementById('opt-delete-card');
-    const targetContainer = document.getElementById('shift-target-container');
-    const confirmBtn = document.getElementById('btn-confirm-cat-action');
-
-    const updateActionUI = (action) => {
-      if (action === 'shift') {
-        shiftCard?.classList.add('active');
-        deleteCard?.classList.remove('active');
-        if (targetContainer) targetContainer.style.display = 'block';
-        confirmBtn.className = 'btn btn-accent';
-        confirmBtn.innerHTML = '<i data-lucide="arrow-right-left"></i> Shift Products &amp; Delete Category';
-      } else {
-        shiftCard?.classList.remove('active');
-        deleteCard?.classList.add('active');
-        if (targetContainer) targetContainer.style.display = 'none';
-        confirmBtn.className = 'btn btn-danger';
-        confirmBtn.innerHTML = '<i data-lucide="trash-2"></i> Permanently Delete Category &amp; Products';
-      }
-      refreshIcons(confirmBtn);
-    };
-
-    modal.querySelectorAll('input[name="cat-del-action"]').forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        updateActionUI(e.target.value);
-      });
-    });
-
-    confirmBtn.addEventListener('click', async () => {
-      const selectedRadio = modal.querySelector('input[name="cat-del-action"]:checked');
-      const action = selectedRadio ? selectedRadio.value : 'delete';
-      let targetCategorySlug = null;
-
-      if (action === 'shift') {
-        const targetSelect = document.getElementById('shift-target-select');
-        targetCategorySlug = targetSelect ? targetSelect.value : null;
-        if (!targetCategorySlug) {
-          UI.toast('Please select a destination category to shift products to.', 'alert-circle', 'error');
-          return;
-        }
-      }
-
-      confirmBtn.disabled = true;
-      confirmBtn.innerHTML = '<span class="spinner"></span> Processing…';
+    document.getElementById('modal-confirm-del-cat-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('modal-confirm-del-cat-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Deleting…';
 
       try {
-        const res = await Api.adminDeleteCategory(slug, { action, targetCategorySlug });
-        UI.toast(res.message || 'Category deleted successfully', 'check-circle-2', 'success');
-        this.closeModal();
+        let payload = {};
+        if (prodCount > 0) {
+          const actionRadio = document.querySelector('input[name="del-cat-action"]:checked');
+          const action = actionRadio ? actionRadio.value : 'shift';
+          payload.action = action;
+          if (action === 'shift') {
+            const targetSelect = document.getElementById('del-cat-target-slug');
+            if (!targetSelect || !targetSelect.value) {
+              throw new Error('Please choose a destination category.');
+            }
+            payload.targetCategorySlug = targetSelect.value;
+          }
+        }
 
-        const [updatedCats, prodsRes] = await Promise.all([
-          Api.getCategories({ includeAll: true }),
-          Api.adminGetProducts()
-        ]);
-        this.categoriesCache = updatedCats || [];
-        this.productsCache = prodsRes.products || [];
-        this.loadTabContent();
+        const res = await Api.adminDeleteCategory(cat.slug, payload);
+        UI.toast(res.message || 'Category deleted successfully!', 'check-circle-2', 'success');
+
+        this.categoriesCache = await Api.getCategories({ includeAll: true });
+        this.closeModal();
+        if (this.currentTab === 'categories') {
+          this.loadTabContent();
+        }
       } catch (err) {
-        confirmBtn.disabled = false;
-        updateActionUI(action);
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="trash-2"></i> Permanently Delete';
+        refreshIcons(btn);
         UI.toast(err.message || 'Failed to delete category', 'alert-circle', 'error');
       }
     });
+  },
+
+  closeModal() {
+    document.getElementById('admin-modal-overlay').classList.remove('show');
   },
 
   // -------------------------------------------------------------
@@ -1307,7 +1438,15 @@ const AdminUI = {
               <b>${esc(o.customerName)}</b>
               <div style="font-size:12px;color:var(--muted)">${esc(o.customerPhone)} · ${esc(o.customerCity)}</div>
             </td>
-            <td>${esc(o.productName)} <span class="mono">× ${o.quantity}</span></td>
+            <td>
+              <b>${esc(o.productName)}</b>
+              ${(o.selectedVariation && o.selectedVariation.name) ? `
+                <div style="margin-top:2px">
+                  <span class="var-badge-summary" style="font-size:11px">Var: ${esc(o.selectedVariation.name)}</span>
+                </div>
+              ` : ''}
+              <div class="mono" style="font-size:11.5px;color:var(--muted)">Qty: ${o.quantity} · ${formatPrice(o.productPrice)} each</div>
+            </td>
             <td><b class="mono">${formatPrice(o.grandTotal)}</b></td>
             <td>
               <select class="admin-filter-select status-changer" data-id="${o.orderId}" style="height:32px;font-size:12px;font-weight:600">
@@ -1396,9 +1535,15 @@ const AdminUI = {
 
           <div style="background:var(--paper);padding:18px;border-radius:12px">
             <h4 style="font-size:14px;margin-bottom:12px;font-family:var(--fm);color:var(--muted);text-transform:uppercase">Order Summary</h4>
-            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-              <span>${esc(o.productName)} (× ${o.quantity})</span>
-              <span class="mono">${formatPrice(o.productTotal)}</span>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+              <div>
+                <b>${esc(o.productName)}</b>
+                ${(o.selectedVariation && o.selectedVariation.name) ? `
+                  <div style="margin-top:2px"><span class="var-badge-summary">Variation: ${esc(o.selectedVariation.name)}</span></div>
+                ` : ''}
+                <div class="mono" style="font-size:12px;color:var(--muted);margin-top:2px">Qty: ${o.quantity} × ${formatPrice(o.productPrice)}</div>
+              </div>
+              <span class="mono" style="font-weight:700">${formatPrice(o.productTotal)}</span>
             </div>
             <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:var(--muted);font-size:13.5px">
               <span>Shipping (Flat)</span>
@@ -1574,11 +1719,11 @@ const AdminUI = {
   // TAB 5: Theme & Website Settings
   // -------------------------------------------------------------
   async renderTabSettings(container) {
-    const [s, prodsRes] = await Promise.all([
+    const [s, productsRes] = await Promise.all([
       Api.getSettings(),
-      Api.adminGetProducts().catch(() => Api.getProducts({ limit: 200 }).catch(() => []))
+      Api.getProducts({ limit: 100 }).catch(() => [])
     ]);
-    const allProducts = Array.isArray(prodsRes) ? prodsRes : (prodsRes?.products || []);
+    const allProducts = Array.isArray(productsRes) ? productsRes : (productsRes?.products || []);
     const currentAdmin = Api.getAdminUser() || { name: 'Admin', email: 'admin@rollpoint.pk' };
 
     container.innerHTML = `
@@ -1589,7 +1734,7 @@ const AdminUI = {
       </div>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:24px;max-width:820px">
+    <div style="display:flex;flex-direction:column;gap:24px;width:100%">
       <!-- Store Settings Card -->
       <div class="admin-card" style="padding:30px">
         <h3 style="font-size:18px;margin-bottom:18px;display:flex;align-items:center;gap:8px">
@@ -1651,7 +1796,7 @@ const AdminUI = {
                     <option value="">-- No specific product (Links to All Products) --</option>
                     ${allProducts.map(p => `
                       <option value="${p.slug}" ${s.heroProductSlug === p.slug ? 'selected' : ''}>
-                        ${esc(p.name)} (${typeof formatPrice === 'function' ? formatPrice(p.price) : 'Rs. ' + p.price})
+                        ${esc(p.name)} (${formatPrice(p.price)})
                       </option>
                     `).join('')}
                   </select>
@@ -1783,6 +1928,62 @@ const AdminUI = {
               </div>
             </div>
 
+            <!-- Special Offer / Promotional Deal Banner Settings -->
+            <div class="field full" style="border-top:1px solid var(--line);padding-top:18px;margin-top:10px">
+              <h4 style="font-size:16px;margin-bottom:4px;display:flex;align-items:center;gap:6px">
+                <i data-lucide="tag" style="color:var(--accent);width:18px;height:18px"></i> Promotional Deal Banner &amp; Image
+              </h4>
+              <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Homepage ke darmiyan mein jo 'Stock-up deal' wala banner hai, uski picture aur text yahan se change karein.</p>
+              
+              <div style="background:var(--paper-2);border:1px solid var(--line);padding:18px;border-radius:var(--r);margin-bottom:16px">
+                <!-- Deal Image Upload & Preview -->
+                <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px">
+                  <div style="width:200px;height:120px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <img id="st-deal-preview" src="${esc(s.dealImage || 'https://images.unsplash.com/photo-1588854337236-6889d631faa8?w=880&auto=format&fit=crop&q=80')}" alt="Deal Preview" style="width:100%;height:100%;object-fit:cover">
+                  </div>
+                  <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:10px">
+                    <div class="field">
+                      <label for="st-deal-img">Deal Banner Image URL</label>
+                      <input id="st-deal-img" type="text" value="${esc(s.dealImage || 'https://images.unsplash.com/photo-1588854337236-6889d631faa8?w=880&auto=format&fit=crop&q=80')}" placeholder="Paste image URL or upload below" style="background:#fff">
+                    </div>
+                    <label class="upload-dropzone" style="padding:10px;cursor:pointer;background:#fff">
+                      <input type="file" id="st-deal-file-upload" accept="image/*" style="display:none">
+                      <i data-lucide="upload-cloud" style="width:20px;height:20px;color:var(--accent);margin:0 auto 2px"></i>
+                      <div style="font-weight:600;font-size:12px">Upload Deal Banner Picture from PC</div>
+                      <small style="color:var(--muted);font-size:10px">PNG, JPG, WEBP up to 5MB</small>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="st-deal-kicker">Top Kicker Label</label>
+                    <input id="st-deal-kicker" type="text" value="${esc(s.dealKicker || 'Special Mega Offer · 2026')}" placeholder="e.g. Special Mega Offer · 2026">
+                  </div>
+                  <div class="field">
+                    <label for="st-deal-tag">Discount Tag on Picture</label>
+                    <input id="st-deal-tag" type="text" value="${esc(s.dealTag || 'Up to 50% Off')}" placeholder="e.g. Up to 50% Off">
+                  </div>
+                  <div class="field full">
+                    <label for="st-deal-title">Deal Main Headline</label>
+                    <input id="st-deal-title" type="text" value="${esc(s.dealTitle || 'Hot Selling Gadgets & Essentials')}" style="font-size:15px;font-weight:600">
+                  </div>
+                  <div class="field full">
+                    <label for="st-deal-subtitle">Deal Description</label>
+                    <textarea id="st-deal-subtitle" rows="2">${esc(s.dealSubtitle || 'Shop our top trending Mini Thermal Printers, USB Rechargeable Fans & Party Straws at discounted prices with Cash on Delivery nationwide!')}</textarea>
+                  </div>
+                  <div class="field">
+                    <label for="st-deal-btn-text">Button Text</label>
+                    <input id="st-deal-btn-text" type="text" value="${esc(s.dealBtnText || 'Explore All Products')}">
+                  </div>
+                  <div class="field">
+                    <label for="st-deal-btn-href">Button Target Link</label>
+                    <input id="st-deal-btn-href" type="text" value="${esc(s.dealBtnHref || '#/shop')}" placeholder="#/shop or #/category/slug">
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Color Theme Settings -->
             <div class="field full" style="border-top:1px solid var(--line);padding-top:18px;margin-top:10px">
               <h4 style="font-size:15px;margin-bottom:12px">Brand Theme Colors</h4>
@@ -1890,23 +2091,38 @@ const AdminUI = {
       });
     }
 
-    // "Use Product's Image" quick button helper
-    const btnUseProdImg = document.getElementById('btn-use-prod-img');
-    const heroProductSelect = document.getElementById('st-hero-product');
-    if (heroProductSelect && heroImgInput && heroPreview) {
-      heroProductSelect.addEventListener('change', () => {
-        const selectedSlug = heroProductSelect.value;
-        if (!selectedSlug) return;
-        const prod = allProducts.find(p => p.slug === selectedSlug);
-        if (prod && prod.images && prod.images.length > 0) {
-          if (!heroImgInput.value || heroImgInput.value.includes('picsum.photos')) {
-            heroImgInput.value = prod.images[0];
-            heroPreview.src = prod.images[0];
+    // Deal image preview & file upload listener
+    const dealImgInput = document.getElementById('st-deal-img');
+    const dealPreview = document.getElementById('st-deal-preview');
+    if (dealImgInput && dealPreview) {
+      dealImgInput.addEventListener('input', () => {
+        const val = dealImgInput.value.trim();
+        if (val) dealPreview.src = val;
+      });
+    }
+
+    const dealFileUpload = document.getElementById('st-deal-file-upload');
+    if (dealFileUpload && dealImgInput && dealPreview) {
+      dealFileUpload.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          UI.toast('Uploading deal banner image…');
+          const res = await Api.adminUploadImage(file);
+          if (res.ok && res.url) {
+            dealImgInput.value = res.url;
+            dealPreview.src = res.url;
+            UI.toast('Deal image uploaded! Click "Save Website Settings" below to apply.', 'check-circle-2', 'success');
           }
+        } catch (err) {
+          UI.toast(err.message || 'Upload failed', 'alert-circle', 'error');
         }
       });
     }
 
+    // "Use Product's Image" quick button helper
+    const btnUseProdImg = document.getElementById('btn-use-prod-img');
+    const heroProductSelect = document.getElementById('st-hero-product');
     if (btnUseProdImg && heroProductSelect && heroImgInput && heroPreview) {
       btnUseProdImg.addEventListener('click', () => {
         const selectedSlug = heroProductSelect.value;
@@ -1959,6 +2175,13 @@ const AdminUI = {
         usp3Sub: document.getElementById('st-usp3-sub').value.trim(),
         usp4Title: document.getElementById('st-usp4-title').value.trim(),
         usp4Sub: document.getElementById('st-usp4-sub').value.trim(),
+        dealKicker: document.getElementById('st-deal-kicker') ? document.getElementById('st-deal-kicker').value.trim() : 'Special Mega Offer · 2026',
+        dealTitle: document.getElementById('st-deal-title') ? document.getElementById('st-deal-title').value.trim() : 'Hot Selling Gadgets & Essentials',
+        dealSubtitle: document.getElementById('st-deal-subtitle') ? document.getElementById('st-deal-subtitle').value.trim() : '',
+        dealImage: document.getElementById('st-deal-img') ? document.getElementById('st-deal-img').value.trim() : '',
+        dealTag: document.getElementById('st-deal-tag') ? document.getElementById('st-deal-tag').value.trim() : '',
+        dealBtnText: document.getElementById('st-deal-btn-text') ? document.getElementById('st-deal-btn-text').value.trim() : 'Explore All Products',
+        dealBtnHref: document.getElementById('st-deal-btn-href') ? document.getElementById('st-deal-btn-href').value.trim() : '#/shop',
         primaryColor: document.getElementById('st-col-accent-txt').value.trim(),
         secondaryColor: document.getElementById('st-col-secondary-txt').value.trim(),
         footerAboutText: document.getElementById('st-footer').value.trim()

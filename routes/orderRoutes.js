@@ -11,11 +11,16 @@ const { memoryStore } = require('../utils/memoryStore');
 const formatPrice = n => 'Rs. ' + Number(n).toLocaleString('en-US');
 
 function buildWhatsAppPayload(order, whatsappIntl = '923089134302') {
+  const variationLine = (order.selectedVariation && order.selectedVariation.name)
+    ? `*Variation:* ${order.selectedVariation.name}`
+    : null;
+
   const lines = [
     '*NEW ORDER*',
     '',
     `*Order ID:* ${order.orderId || order.id}`,
     `*Product:* ${order.productName}`,
+    variationLine,
     `*Price:* ${formatPrice(order.productPrice)}`,
     `*Quantity:* ${order.quantity}`,
     `*Product Total:* ${formatPrice(order.productTotal)}`,
@@ -55,7 +60,10 @@ router.post('/', async (req, res) => {
       customerEmail,
       customerAddress,
       customerCity,
-      customerNotes
+      customerNotes,
+      variationName,
+      variationPrice,
+      variationImage
     } = req.body;
 
     if (!productId) return res.status(400).json({ ok: false, error: 'Product is required.' });
@@ -75,26 +83,38 @@ router.post('/', async (req, res) => {
       const shipping = settings.shippingRate || 250;
       const whatsappIntl = process.env.WHATSAPP_INTL || settings.whatsappIntl || '923089134302';
 
-      const productPrice = product.price;
-      const productTotal = productPrice * qty;
+      let effectivePrice = product.price;
+      if (variationPrice !== undefined && variationPrice !== null && !isNaN(Number(variationPrice))) {
+        effectivePrice = Number(variationPrice);
+      }
+
+      const cleanVarName = (variationName || '').trim();
+      const cleanVarImg = variationImage || '';
+      const productTotal = effectivePrice * qty;
       const grandTotal = productTotal + shipping;
 
       const order = new Order({
         orderId,
         productId: product.id,
         productName: product.name,
-        productPrice,
+        productPrice: effectivePrice,
         quantity: qty,
         productTotal,
         shipping,
         grandTotal,
+        selectedVariation: cleanVarName ? {
+          name: cleanVarName,
+          price: effectivePrice,
+          image: cleanVarImg
+        } : undefined,
         items: [{
           productId: product.id,
-          name: product.name,
-          price: productPrice,
+          name: cleanVarName ? `${product.name} (${cleanVarName})` : product.name,
+          price: effectivePrice,
           qty,
           total: productTotal,
-          image: (product.images && product.images[0]) || ''
+          image: cleanVarImg || (product.images && product.images[0]) || '',
+          variation: cleanVarName
         }],
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
@@ -128,6 +148,7 @@ router.post('/', async (req, res) => {
           productTotal: order.productTotal,
           shipping: order.shipping,
           grandTotal: order.grandTotal,
+          selectedVariation: order.selectedVariation,
           customerName: order.customerName,
           customerPhone: order.customerPhone,
           customerEmail: order.customerEmail,
@@ -148,8 +169,15 @@ router.post('/', async (req, res) => {
 
     const shipping = memoryStore.settings.shippingRate || 250;
     const whatsappIntl = process.env.WHATSAPP_INTL || memoryStore.settings.whatsappIntl || '923089134302';
-    const productPrice = product.price;
-    const productTotal = productPrice * qty;
+    
+    let effectivePrice = product.price;
+    if (variationPrice !== undefined && variationPrice !== null && !isNaN(Number(variationPrice))) {
+      effectivePrice = Number(variationPrice);
+    }
+
+    const cleanVarName = (variationName || '').trim();
+    const cleanVarImg = variationImage || '';
+    const productTotal = effectivePrice * qty;
     const grandTotal = productTotal + shipping;
 
     const order = {
@@ -157,18 +185,24 @@ router.post('/', async (req, res) => {
       orderId,
       productId: product.id,
       productName: product.name,
-      productPrice,
+      productPrice: effectivePrice,
       quantity: qty,
       productTotal,
       shipping,
       grandTotal,
+      selectedVariation: cleanVarName ? {
+        name: cleanVarName,
+        price: effectivePrice,
+        image: cleanVarImg
+      } : undefined,
       items: [{
         productId: product.id,
-        name: product.name,
-        price: productPrice,
+        name: cleanVarName ? `${product.name} (${cleanVarName})` : product.name,
+        price: effectivePrice,
         qty,
         total: productTotal,
-        image: (product.images && product.images[0]) || ''
+        image: cleanVarImg || (product.images && product.images[0]) || '',
+        variation: cleanVarName
       }],
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),

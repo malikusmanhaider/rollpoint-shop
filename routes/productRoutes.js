@@ -5,7 +5,7 @@ const Product = require('../models/Product');
 const Review = require('../models/Review');
 const Category = require('../models/Category');
 const { requireAdmin } = require('../middleware/auth');
-const { INITIAL_CATEGORIES } = require('../config/seed');
+const { INITIAL_CATEGORIES, INITIAL_PRODUCTS } = require('../config/seed');
 const { memoryStore } = require('../utils/memoryStore');
 
 function slugify(text) {
@@ -30,11 +30,14 @@ router.get('/categories', async (req, res) => {
     let dbCategories = [];
 
     if (mongoose.connection.readyState === 1) {
-      // Ensure default categories exist if collection empty
-      const count = await Category.countDocuments();
-      if (count === 0) {
-        for (const c of INITIAL_CATEGORIES) {
+      // Ensure initial categories exist
+      for (const c of INITIAL_CATEGORIES) {
+        const exists = await Category.findOne({ slug: c.slug });
+        if (!exists) {
           await Category.create(c).catch(() => null);
+        } else if (c.image && !exists.image) {
+          exists.image = c.image;
+          await exists.save().catch(() => null);
         }
       }
 
@@ -42,20 +45,13 @@ router.get('/categories', async (req, res) => {
       products = await Product.find(includeAll ? {} : { isPublished: true });
     } else {
       await memoryStore.init();
-      dbCategories = memoryStore.categories || INITIAL_CATEGORIES;
+      dbCategories = memoryStore.categories || [];
       products = includeAll ? memoryStore.products : memoryStore.products.filter(p => p.isPublished);
     }
 
     const categoryMap = new Map();
     dbCategories.forEach(c => {
-      categoryMap.set(c.slug, { slug: c.slug, name: c.name, tagline: c.tagline || '', count: 0 });
-    });
-
-    // Also include any INITIAL_CATEGORIES not yet in map just in case
-    INITIAL_CATEGORIES.forEach(c => {
-      if (!categoryMap.has(c.slug)) {
-        categoryMap.set(c.slug, { slug: c.slug, name: c.name, tagline: c.tagline || '', count: 0 });
-      }
+      categoryMap.set(c.slug, { slug: c.slug, name: c.name, tagline: c.tagline || '', image: c.image || '', count: 0 });
     });
 
     products.forEach(p => {
@@ -67,6 +63,7 @@ router.get('/categories', async (req, res) => {
           slug: p.category,
           name: p.categoryName || p.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
           tagline: '',
+          image: '',
           count: 1
         });
       }
@@ -83,7 +80,7 @@ router.get('/categories', async (req, res) => {
 // POST /api/products/categories (Admin Only)
 router.post('/categories', requireAdmin, async (req, res) => {
   try {
-    const { name, slug: customSlug, tagline } = req.body;
+    const { name, slug: customSlug, tagline, image } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ ok: false, error: 'Category name is required.' });
     }
@@ -104,7 +101,8 @@ router.post('/categories', requireAdmin, async (req, res) => {
       const newCategory = new Category({
         name: name.trim(),
         slug,
-        tagline: tagline ? tagline.trim() : ''
+        tagline: tagline ? tagline.trim() : '',
+        image: image ? image.trim() : ''
       });
       await newCategory.save();
       return res.status(201).json({ ok: true, message: 'Category created successfully', category: newCategory });
@@ -118,13 +116,99 @@ router.post('/categories', requireAdmin, async (req, res) => {
     const newCategory = {
       name: name.trim(),
       slug,
-      tagline: tagline ? tagline.trim() : ''
+      tagline: tagline ? tagline.trim() : '',
+      image: image ? image.trim() : ''
     };
     memoryStore.categories.push(newCategory);
     return res.status(201).json({ ok: true, message: 'Category created successfully', category: newCategory });
   } catch (err) {
     console.error('Create category error:', err);
     return res.status(500).json({ ok: false, error: err.message || 'Failed to create category.' });
+  }
+});
+
+// PUT /api/products/categories/:slug (Admin Only)
+router.put('/categories/:slug', requireAdmin, async (req, res) => {
+  try {
+    const oldSlug = req.params.slug;
+    const { name, slug: newSlugInput, tagline, image } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ ok: false, error: 'Category name is required.' });
+    }
+
+    const trimmedName = name.trim();
+    let newSlug = newSlugInput ? slugify(newSlugInput) : (oldSlug || slugify(trimmedName));
+
+    if (mongoose.connection.readyState === 1) {
+      const category = await Category.findOne({ slug: oldSlug });
+      if (!category) {
+        return res.status(404).json({ ok: false, error: 'Category not found.' });
+      }
+
+      if (newSlug !== oldSlug) {
+        const slugExists = await Category.findOne({ slug: newSlug });
+        if (slugExists) {
+          return res.status(400).json({ ok: false, error: `Category with slug "${newSlug}" already exists.` });
+        }
+      }
+
+      const nameExists = await Category.findOne({
+        name: new RegExp(`^${trimmedName}$`, 'i'),
+        _id: { $ne: category._id }
+      });
+      if (nameExists) {
+        return res.status(400).json({ ok: false, error: `Category with name "${trimmedName}" already exists.` });
+      }
+
+      category.name = trimmedName;
+      category.slug = newSlug;
+      category.tagline = tagline ? tagline.trim() : '';
+      if (image !== undefined) category.image = image.trim();
+      await category.save();
+
+      // Cascade update to products if slug or name changed
+      await Product.updateMany(
+        { category: oldSlug },
+        { $set: { category: newSlug, categoryName: trimmedName } }
+      );
+
+      return res.json({ ok: true, message: 'Category updated successfully', category });
+    }
+
+    // Memory Store fallback
+    await memoryStore.init();
+    const catIndex = memoryStore.categories.findIndex(c => c.slug === oldSlug);
+    if (catIndex === -1) {
+      return res.status(404).json({ ok: false, error: 'Category not found.' });
+    }
+
+    if (newSlug !== oldSlug && memoryStore.categories.some(c => c.slug === newSlug)) {
+      return res.status(400).json({ ok: false, error: `Category with slug "${newSlug}" already exists.` });
+    }
+
+    if (memoryStore.categories.some((c, idx) => idx !== catIndex && c.name.toLowerCase() === trimmedName.toLowerCase())) {
+      return res.status(400).json({ ok: false, error: `Category with name "${trimmedName}" already exists.` });
+    }
+
+    memoryStore.categories[catIndex] = {
+      name: trimmedName,
+      slug: newSlug,
+      tagline: tagline ? tagline.trim() : '',
+      image: image !== undefined ? image.trim() : (memoryStore.categories[catIndex].image || '')
+    };
+
+    memoryStore.products.forEach(p => {
+      if (p.category === oldSlug) {
+        p.category = newSlug;
+        p.categoryName = trimmedName;
+      }
+    });
+
+    return res.json({ ok: true, message: 'Category updated successfully', category: memoryStore.categories[catIndex] });
+  } catch (err) {
+    console.error('Update category error:', err);
+    return res.status(500).json({ ok: false, error: err.message || 'Failed to update category.' });
   }
 });
 
@@ -240,6 +324,28 @@ router.get('/', async (req, res) => {
     const { category, q, inStockOnly, featuredOnly, sort, limit } = req.query;
 
     if (mongoose.connection.readyState === 1) {
+      // Ensure missing initial products exist
+      for (const p of INITIAL_PRODUCTS) {
+        const exists = await Product.findOne({ $or: [{ id: p.id }, { slug: p.slug }] });
+        if (!exists) {
+          const { seedReviews, ...prodData } = p;
+          const created = await Product.create(prodData).catch(() => null);
+          if (created && seedReviews && seedReviews.length) {
+            for (const rev of seedReviews) {
+              await Review.create({
+                productId: created.id,
+                productSlug: created.slug,
+                name: rev.name,
+                rating: rev.rating,
+                text: rev.text,
+                status: 'approved',
+                date: rev.date || new Date()
+              }).catch(() => null);
+            }
+          }
+        }
+      }
+
       const query = { isPublished: true };
       if (category) query.category = category;
       if (inStockOnly === 'true' || inStockOnly === true) query.stock = { $gt: 0 };
@@ -413,7 +519,9 @@ router.post('/', requireAdmin, async (req, res) => {
       images,
       keywords,
       featured,
-      isPublished
+      isPublished,
+      variationTitle,
+      variations
     } = req.body;
 
     if (!name || price === undefined || !category) {
@@ -421,6 +529,18 @@ router.post('/', requireAdmin, async (req, res) => {
     }
 
     let slug = customSlug ? slugify(customSlug) : slugify(name);
+
+    // Format variations if provided
+    let cleanVariations = [];
+    if (Array.isArray(variations)) {
+      cleanVariations = variations.map(v => ({
+        name: (v.name || '').trim(),
+        price: v.price !== undefined && v.price !== null && v.price !== '' ? Number(v.price) : null,
+        oldPrice: v.oldPrice !== undefined && v.oldPrice !== null && v.oldPrice !== '' ? Number(v.oldPrice) : null,
+        image: v.image || '',
+        stock: v.stock !== undefined && v.stock !== null && v.stock !== '' ? Number(v.stock) : null
+      })).filter(v => v.name.length > 0);
+    }
 
     if (mongoose.connection.readyState === 1) {
       let existingSlug = await Product.findOne({ slug });
@@ -443,7 +563,9 @@ router.post('/', requireAdmin, async (req, res) => {
         images: Array.isArray(images) && images.length > 0 ? images : [`https://picsum.photos/seed/${slug}/640/640.jpg`],
         keywords: Array.isArray(keywords) ? keywords : (keywords ? keywords.split(',').map(k => k.trim()) : []),
         featured: Boolean(featured),
-        isPublished: isPublished !== undefined ? Boolean(isPublished) : true
+        isPublished: isPublished !== undefined ? Boolean(isPublished) : true,
+        variationTitle: variationTitle ? variationTitle.trim() : 'Color Family',
+        variations: cleanVariations
       });
 
       await newProduct.save();
@@ -471,6 +593,8 @@ router.post('/', requireAdmin, async (req, res) => {
       keywords: Array.isArray(keywords) ? keywords : (keywords ? keywords.split(',').map(k => k.trim()) : []),
       featured: Boolean(featured),
       isPublished: isPublished !== undefined ? Boolean(isPublished) : true,
+      variationTitle: variationTitle ? variationTitle.trim() : 'Color Family',
+      variations: cleanVariations,
       rating: 5.0,
       reviewCount: 0,
       createdAt: new Date(),
@@ -494,6 +618,19 @@ router.put('/:id', requireAdmin, async (req, res) => {
     if (updateData.price !== undefined) updateData.price = Number(updateData.price);
     if (updateData.oldPrice !== undefined) updateData.oldPrice = updateData.oldPrice ? Number(updateData.oldPrice) : null;
     if (updateData.stock !== undefined) updateData.stock = Number(updateData.stock);
+
+    if (Array.isArray(updateData.variations)) {
+      updateData.variations = updateData.variations.map(v => ({
+        name: (v.name || '').trim(),
+        price: v.price !== undefined && v.price !== null && v.price !== '' ? Number(v.price) : null,
+        oldPrice: v.oldPrice !== undefined && v.oldPrice !== null && v.oldPrice !== '' ? Number(v.oldPrice) : null,
+        image: v.image || '',
+        stock: v.stock !== undefined && v.stock !== null && v.stock !== '' ? Number(v.stock) : null
+      })).filter(v => v.name.length > 0);
+    }
+    if (updateData.variationTitle) {
+      updateData.variationTitle = updateData.variationTitle.trim();
+    }
 
     if (mongoose.connection.readyState === 1) {
       const product = await Product.findOneAndUpdate(

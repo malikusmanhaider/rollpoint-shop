@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const Admin = require('../models/Admin');
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 const Order = require('../models/Order');
 const Review = require('../models/Review');
 const { requireAdmin } = require('../middleware/auth');
@@ -214,6 +215,7 @@ router.get('/stats', requireAdmin, async (req, res) => {
       const [
         totalProducts,
         lowStockProducts,
+        totalCategories,
         totalOrders,
         pendingOrders,
         confirmedOrders,
@@ -226,6 +228,7 @@ router.get('/stats', requireAdmin, async (req, res) => {
       ] = await Promise.all([
         Product.countDocuments(),
         Product.countDocuments({ stock: { $lte: 10 } }),
+        Category.countDocuments(),
         Order.countDocuments(),
         Order.countDocuments({ orderStatus: 'Pending' }),
         Order.countDocuments({ orderStatus: 'Confirmed' }),
@@ -248,6 +251,7 @@ router.get('/stats', requireAdmin, async (req, res) => {
         stats: {
           totalProducts,
           lowStockProducts,
+          totalCategories,
           totalOrders,
           pendingOrders,
           confirmedOrders,
@@ -264,6 +268,7 @@ router.get('/stats', requireAdmin, async (req, res) => {
 
     await memoryStore.init();
     const prods = memoryStore.products;
+    const cats = memoryStore.categories;
     const orders = memoryStore.orders;
     const reviews = memoryStore.reviews;
 
@@ -276,6 +281,7 @@ router.get('/stats', requireAdmin, async (req, res) => {
       stats: {
         totalProducts: prods.length,
         lowStockProducts: prods.filter(p => p.stock <= 10).length,
+        totalCategories: cats.length,
         totalOrders: orders.length,
         pendingOrders: orders.filter(o => o.orderStatus === 'Pending').length,
         confirmedOrders: orders.filter(o => o.orderStatus === 'Confirmed').length,

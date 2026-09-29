@@ -134,13 +134,33 @@ const settingSchema = new mongoose.Schema({
     type: String,
     default: '0308 9134302'
   },
+  dealKicker: {
+    type: String,
+    default: 'Special Mega Offer · 2026'
+  },
   dealTitle: {
     type: String,
-    default: 'Buy 10 rolls, pay for 9.'
+    default: 'Hot Selling Gadgets & Essentials'
   },
   dealSubtitle: {
     type: String,
-    default: 'Order any ten 80mm or 57mm thermal rolls and the eleventh is on us — applied when our team confirms your order on WhatsApp.'
+    default: 'Shop our top trending Mini Thermal Printers, USB Rechargeable Fans & Party Straws at discounted prices with Cash on Delivery nationwide!'
+  },
+  dealImage: {
+    type: String,
+    default: 'https://img.drz.lazcdn.com/g/kf/S036af77a759e409d9e2f3cf440217919J.png_720x720q80.png'
+  },
+  dealTag: {
+    type: String,
+    default: 'Up to 50% Off'
+  },
+  dealBtnText: {
+    type: String,
+    default: 'Explore All Products'
+  },
+  dealBtnHref: {
+    type: String,
+    default: '#/shop'
   }
 }, {
   timestamps: true

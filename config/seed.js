@@ -5,227 +5,190 @@ const Setting = require('../models/Setting');
 const Category = require('../models/Category');
 
 const INITIAL_CATEGORIES = [
-  { slug: 'thermal-rolls', name: 'Thermal Rolls', tagline: '80mm & 57mm register rolls' },
-  { slug: 'thermal-paper', name: 'Thermal Paper', tagline: 'Jumbo & multi-ply rolls' },
-  { slug: 'pos-products', name: 'POS Products', tagline: 'Printers, scanners & drawers' },
-  { slug: 'mini-printer-paper', name: 'Mini Printer Paper', tagline: 'Paper & stickers for pocket printers' },
-  { slug: 'labels', name: 'Labels', tagline: 'Thermal labels for shipping & retail' },
-  { slug: 'other-products', name: 'Other Products', tagline: 'Everything else for your counter' }
+  { slug: 'mini-printer', name: 'Mini Printer', tagline: 'Portable & Bluetooth pocket printers', image: 'https://img.drz.lazcdn.com/g/kf/S036af77a759e409d9e2f3cf440217919J.png_720x720q80.png' },
+  { slug: 'mini-fan', name: 'Mini Fan', tagline: 'Portable mini fans for daily carry and travel', image: 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?w=720&auto=format&fit=crop&q=80' },
+  { slug: 'party-items', name: 'Party Items', tagline: 'Colorful party straws and fun event essentials', image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=720&auto=format&fit=crop&q=80' }
 ];
-
-const img = (seed, n = 4) =>
-  Array.from({ length: n }, (_, i) => `https://picsum.photos/seed/${seed}-${i + 1}/640/640.jpg`);
 
 const INITIAL_PRODUCTS = [
   {
-    id: 'rp-101', slug: 'thermal-roll-80x80', name: 'Thermal Roll 80mm × 80m — Premium',
-    price: 340, oldPrice: 420, category: 'thermal-rolls', categoryName: 'Thermal Rolls',
-    stock: 240, rating: 4.8, reviewCount: 3, featured: true, isPublished: true,
-    keywords: ['80mm', '80x80', 'receipt roll', 'cash register', 'pos paper', 'bpa free'],
-    images: img('rp-roll-80x80'),
-    shortDescription: 'BPA-free premium thermal roll for POS machines and cash registers. Sharp, dark printing with zero fade.',
-    description: 'Our best-selling 80mm × 80m roll, made from BPA-free premium thermal paper with a high-sensitivity coating that produces crisp, dark prints at low printer heads. Each roll is precision-slitted so it feeds smoothly without jamming, and the 12.7mm standard core fits virtually every receipt printer on the market.\n\nSealed in moisture-proof wrapping and tested batch-by-batch, these rolls keep their coating for up to five years in cool, dry storage — so bulk buying is safe.',
-    specifications: { 'Width': '80 mm', 'Length': '80 m', 'Core diameter': '12.7 mm (standard)', 'Material': 'BPA-free thermal paper', 'Packing': '1 roll, sealed wrap', 'Shelf life': '5 years (cool & dry)' },
+    id: 'rp-116',
+    slug: 'pocket-inkless-mini-thermal-printer-bluetooth',
+    name: 'Pocket Inkless Mini Thermal Printer (Bluetooth Wireless for Kids & Students)',
+    price: 2499,
+    oldPrice: 3200,
+    category: 'mini-printer',
+    categoryName: 'Mini Printer',
+    stock: 50,
+    rating: 4.9,
+    reviewCount: 4,
+    featured: true,
+    isPublished: true,
+    keywords: ['mini printer', 'pocket printer', 'bluetooth printer', 'thermal printer', 'portable printer', 'sticker printer', 'inkless printer', 'kids printer', 'study notes', 'receipt printer'],
+    variationTitle: 'Color Family',
+    variations: [
+      {
+        name: 'Pink Printer',
+        price: 2499,
+        oldPrice: 3200,
+        image: 'https://img.drz.lazcdn.com/g/kf/S036af77a759e409d9e2f3cf440217919J.png_720x720q80.png'
+      },
+      {
+        name: 'Blue Printer',
+        price: 2499,
+        oldPrice: 3200,
+        image: 'https://img.drz.lazcdn.com/static/pk/p/f06c9835ea0d95cc3b31609fd46cf49d.png_720x720q80.png'
+      },
+      {
+        name: 'White Printer',
+        price: 2599,
+        oldPrice: 3400,
+        image: 'https://img.drz.lazcdn.com/static/pk/p/8adc45f5e8f0474823e2ec1a75b5580c.jpg_720x720q80.jpg'
+      }
+    ],
+    images: [
+      'https://img.drz.lazcdn.com/g/kf/S036af77a759e409d9e2f3cf440217919J.png_720x720q80.png',
+      'https://img.drz.lazcdn.com/static/pk/p/f06c9835ea0d95cc3b31609fd46cf49d.png_720x720q80.png',
+      'https://img.drz.lazcdn.com/static/pk/p/8adc45f5e8f0474823e2ec1a75b5580c.jpg_720x720q80.jpg',
+      'https://img.drz.lazcdn.com/static/pk/p/e62d60d26d48063d3392b428bf65d0df.jpg_720x720q80.jpg',
+      'https://img.drz.lazcdn.com/static/pk/p/f8a321bd27db448dac85e93c8cdd5fe6.jpg_720x720q80.jpg'
+    ],
+    shortDescription: 'Pocket-sized inkless mini thermal printer with Bluetooth wireless connectivity. Perfect for kids, students, journaling, study notes, labels, receipts, and QR codes on iOS & Android.',
+    description: 'Make printing fun, easy, and instant with this Pocket Inkless Mini Portable Bluetooth Thermal Printer! Designed with an adorable and compact pocket form factor, it connects seamlessly via Bluetooth to your smartphone or tablet using the companion mobile app.\n\nEquipped with advanced direct thermal printing technology, this printer requires **zero ink cartridges, toner, or ribbon** — just load standard 57mm thermal paper or adhesive sticker rolls and start printing instant black-and-white photos, study notes, reminder memos, to-do lists, shipping labels, and creative DIY crafts.\n\nIts built-in 1000 mAh rechargeable lithium-ion battery provides hours of wireless portable printing, making it the perfect gadget for students, kids, office workers, and travelers.',
+    specifications: {
+      'Printing Method': 'Direct Thermal (Inkless — No toner required)',
+      'Connectivity': 'Bluetooth 4.0 / BLE & Micro-USB',
+      'Resolution': '203 DPI Sharp Print Head',
+      'Paper Size': '57mm × 30mm / 57mm × 25mm rolls & stickers',
+      'Battery Capacity': '1000 mAh Rechargeable Lithium Battery',
+      'Charging': '5V Micro-USB Interface',
+      'Compatible OS': 'Android & iOS (via App)',
+      'Body Design': 'Cute Pocket Cat Design / Ultra-Portable',
+      'Functions': 'Photo Print, Study Notes, Labels, Receipts, QR Code & To-Do Lists'
+    },
     seedReviews: [
-      { name: 'Ahmed Raza', rating: 5, date: new Date('2025-01-12'), text: 'Printing is sharp and dark, no fade at all. We run two POS machines all day and these rolls last longer than the local ones we used before.' },
-      { name: 'Fatima Noor', rating: 4, date: new Date('2024-12-28'), text: 'Good quality paper and fast delivery to Karachi. One roll had a slightly bent core but the rest were perfect.' },
-      { name: 'Usman Tariq', rating: 5, date: new Date('2024-12-03'), text: 'Ordered 20 rolls for our bakery counters. Exactly 80m as promised and the coating works fine with our Epson printer.' },
+      { name: 'Zain Ali', rating: 5, date: new Date('2025-01-22'), text: 'Super cute mini printer! Works seamlessly over Bluetooth with my Android phone. Very handy for study notes and journal stickers.' },
+      { name: 'Ayesha Khan', rating: 5, date: new Date('2025-01-18'), text: 'Bought this as a gift for my younger sister. She loves printing photos and stickers for her notebooks. Quality is surprisingly good!' },
+      { name: 'Hamza Tariq', rating: 5, date: new Date('2025-01-10'), text: 'Best pocket printer for the price. Zero ink needed and connection with the app was quick. Highly recommended!' }
     ]
   },
   {
-    id: 'rp-102', slug: 'thermal-roll-57x50', name: 'Thermal Roll 57mm × 50mm',
-    price: 180, oldPrice: 220, category: 'thermal-rolls', categoryName: 'Thermal Rolls',
-    stock: 180, rating: 4.6, reviewCount: 2, featured: false, isPublished: true,
-    keywords: ['57mm', '57x50', '58mm printer', 'pocket printer', 'receipt roll'],
-    images: img('rp-roll-57x50'),
-    shortDescription: 'Compact 57mm thermal roll for 58mm printers, card machines and pocket receipt printers.',
-    description: 'The standard roll for 58mm Bluetooth receipt printers and handheld billing devices. Clean edges and consistent winding mean fewer paper jams and smoother feeding, even in small portable printers where tolerances are tight.\n\nAvailable loose or in sealed packs — ideal for cafés, food carts and delivery riders who print on the move.',
-    specifications: { 'Width': '57 mm', 'Length': '50 mm Ø', 'Core': 'Coreless', 'Material': 'Thermal paper', 'Packing': '1 roll, sealed wrap', 'Compatible': '58mm printers' },
+    id: 'rp-117',
+    slug: 'rechargeable-mini-fan-portable-handheld-usb-cooling',
+    name: 'Rechargeable Mini Fan Portable Handheld Cooling Fan (USB Charging with Phone Holder & Hanging Rope)',
+    price: 1099,
+    oldPrice: 1800,
+    category: 'mini-fan',
+    categoryName: 'Mini Fan',
+    stock: 75,
+    rating: 4.8,
+    reviewCount: 3,
+    featured: true,
+    isPublished: true,
+    keywords: ['mini fan', 'portable fan', 'handheld fan', 'usb fan', 'rechargeable fan', 'cooling fan', 'pocket fan', 'cute fan', 'desk fan'],
+    variationTitle: 'Color Family',
+    variations: [
+      {
+        name: 'Strawberry Pink',
+        price: 1099,
+        oldPrice: 1800,
+        image: 'https://img.drz.lazcdn.com/g/kf/S6465208f166d49ca98415f6c1370f7a3w.png_720x720q80.png'
+      },
+      {
+        name: 'Avocado Green',
+        price: 1099,
+        oldPrice: 1800,
+        image: 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?w=720&auto=format&fit=crop&q=80'
+      },
+      {
+        name: 'Pineapple Yellow',
+        price: 1099,
+        oldPrice: 1800,
+        image: 'https://images.unsplash.com/photo-1588854337236-6889d631faa8?w=720&auto=format&fit=crop&q=80'
+      }
+    ],
+    images: [
+      'https://img.drz.lazcdn.com/g/kf/S6465208f166d49ca98415f6c1370f7a3w.png_720x720q80.png',
+      'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?w=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1588854337236-6889d631faa8?w=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1618944847823-380f1ed80101?w=720&auto=format&fit=crop&q=80'
+    ],
+    shortDescription: 'Ultra-portable rechargeable handheld mini fan with USB charging, smooth quiet airflow, built-in phone holder base, and hanging lanyard for travel, school, office & home.',
+    description: 'Enjoy instant refreshing cooling wherever you go with this Rechargeable Portable Mini Handheld Fan! Designed for everyday convenience and summer comfort, this lightweight pocket fan delivers smooth, quiet, and natural airflow to keep you fresh during hot weather whether you are at home, school, office, or traveling outdoors.\n\nFeaturing an ultra-quiet motor, you can study, work, or relax without irritating noise. It includes a built-in phone stand base that lets you place the fan upright on your desk while holding your smartphone for hands-free video watching.\n\nPowered by a built-in rechargeable battery, it charges easily via USB with any power bank, laptop, car charger, or USB adapter. Complete with a soft hanging lanyard rope for effortless carrying on the go.',
+    specifications: {
+      'Product Type': 'Rechargeable Handheld & Desk Mini Fan',
+      'Power Source': 'USB Rechargeable Battery',
+      'Battery Capacity': 'Built-in 250–500 mAh Rechargeable Battery',
+      'Charging Time': 'Approx. 1.5 – 2 Hours',
+      'Working Time': 'Up to 60–90 Minutes Continuous Airflow',
+      'Special Features': 'Ultra Quiet Motor, Built-in Phone Holder Base, Hanging Lanyard Rope',
+      'Body Material': 'Durable High-Grade ABS / PP',
+      'Dimensions': '5cm × 4cm × 10.5cm (Pocket Portable)',
+      'Package Includes': '1× Mini Fan, 1× USB Charging Cable, 1× Hanging Lanyard Rope, 1× User Manual'
+    },
     seedReviews: [
-      { name: 'Bilal Ahmed', rating: 5, date: new Date('2025-01-05'), text: 'Perfect size for our 58mm pocket printers. No jamming so far after three packs.' },
-      { name: 'Hira Shahid', rating: 4, date: new Date('2024-11-19'), text: 'Decent rolls for the price. Print quality is clear enough for daily receipts.' }
+      { name: 'Ayesha Khan', rating: 5, date: new Date('2025-02-10'), text: 'Bohat pyara aur useful mini fan hai! Airflow is surprisingly good and the phone holder feature is very handy.' },
+      { name: 'Hamza Tariq', rating: 5, date: new Date('2025-02-18'), text: 'Good battery backup and easy USB charging. Perfect for university and travel in summer.' },
+      { name: 'Sara Ahmed', rating: 4, date: new Date('2025-03-01'), text: 'Compact pocket size, quiet motor and cute colors. Recommended!' }
     ]
   },
   {
-    id: 'rp-103', slug: 'thermal-roll-80x60', name: 'Thermal Roll 80mm × 60m',
-    price: 265, oldPrice: null, category: 'thermal-rolls', categoryName: 'Thermal Rolls',
-    stock: 95, rating: 4.5, reviewCount: 2, featured: false, isPublished: true,
-    keywords: ['80mm', '80x60', 'receipt roll', 'supermarket', 'pharmacy'],
-    images: img('rp-roll-80x60'),
-    shortDescription: 'Mid-length 80mm roll — a balanced option for pharmacies, kiosks and low-volume counters.',
-    description: 'Not every counter burns through an 80m roll. This 60m version keeps the same premium BPA-free coating and slitting quality in a lighter, cheaper roll — perfect for pharmacies, mobile top-up shops and billing points with moderate footfall.',
-    specifications: { 'Width': '80 mm', 'Length': '60 m', 'Core diameter': '12.7 mm', 'Material': 'BPA-free thermal paper', 'Packing': '1 roll, sealed wrap' },
+    id: 'rp-118',
+    slug: '50pcs-colorful-bendy-straws-flexible-drinking-party-straws',
+    name: '50PCS Colorful Bendy Straws (Flexible Drinking Straws for Kids Birthday, Parties & Cold Drinks)',
+    price: 199,
+    oldPrice: 499,
+    category: 'party-items',
+    categoryName: 'Party Items',
+    stock: 200,
+    rating: 4.9,
+    reviewCount: 5,
+    featured: true,
+    isPublished: true,
+    keywords: ['party straws', 'bendy straws', 'colorful straws', 'flexible straws', 'birthday straws', 'disposable straws', 'party supplies', 'drinking straws', 'juice straws'],
+    variationTitle: 'Pack Size',
+    variations: [
+      {
+        name: '50 Pcs Pack',
+        price: 199,
+        oldPrice: 499,
+        image: 'https://img.drz.lazcdn.com/g/kf/Scbc3ecf468d74e978df0c67fcc0fc180C.png_720x720q80.png'
+      },
+      {
+        name: '100 Pcs Value Pack',
+        price: 349,
+        oldPrice: 799,
+        image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=720&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '200 Pcs Mega Pack',
+        price: 599,
+        oldPrice: 1299,
+        image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=720&auto=format&fit=crop&q=80'
+      }
+    ],
+    images: [
+      'https://img.drz.lazcdn.com/g/kf/Scbc3ecf468d74e978df0c67fcc0fc180C.png_720x720q80.png',
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=720&auto=format&fit=crop&q=80'
+    ],
+    shortDescription: 'Flexible bendy colorful drinking straws in vibrant assorted colors. Food-grade, hygienic, and disposable — perfect for birthday parties, weddings, juice bars, milkshakes & events.',
+    description: 'Brighten up your drinks and celebrations with this pack of Colorful Bendy Flexible Drinking Straws! Designed with an ultra-flexible accordion bendable section, these straws make sipping convenient, fun, and spill-free for kids and adults alike.\n\nMade from 100% food-grade, BPA-free, and odorless plastic material, they are safe for juices, smoothies, soft drinks, milkshakes, mocktails, iced tea, and cold beverages.\n\nFeaturing an assorted mix of vivid neon colors (Pink, Green, Yellow, Blue, Orange), they add instant festive energy to birthday parties, weddings, Eid get-togethers, picnics, school celebrations, and family BBQs.',
+    specifications: {
+      'Product Type': 'Flexible Bendy Drinking Straws',
+      'Material': '100% Food-Grade BPA-Free Plastic',
+      'Colors': 'Assorted Vibrant Mixed Neon Colors (Pink, Blue, Green, Yellow, Orange)',
+      'Design': 'Flexible Accordion Bendable Section',
+      'Straw Length': 'Approx. 20 cm – 21 cm (Stretchable)',
+      'Suitable For': 'Cold Drinks, Juices, Smoothies, Milkshakes, Mocktails & Soft Drinks',
+      'Occasion': 'Birthday Parties, Weddings, School Events, Picnics, Cafes & Family Gatherings',
+      'Package Includes': '1× Pack of Flexible Colorful Straws (Pack Size as selected)'
+    },
     seedReviews: [
-      { name: 'Salman Qureshi', rating: 5, date: new Date('2024-12-15'), text: '60m length is ideal for our pharmacy. Delivery took just 2 days to Lahore.' },
-      { name: 'Ayesha Malik', rating: 4, date: new Date('2024-10-30'), text: 'Good value. Packaging could be a bit stronger but the product itself is fine.' }
-    ]
-  },
-  {
-    id: 'rp-104', slug: 'jumbo-roll-80x180', name: 'Jumbo Thermal Roll 80mm × 180m',
-    price: 780, oldPrice: 950, category: 'thermal-paper', categoryName: 'Thermal Paper',
-    stock: 42, rating: 4.7, reviewCount: 2, featured: true, isPublished: true,
-    keywords: ['jumbo', '80x180', '180m', 'supermarket', 'high volume', 'bpa free'],
-    images: img('rp-jumbo-80x180'),
-    shortDescription: 'High-capacity jumbo roll for supermarkets and hypermarkets — fewer changes, more uptime.',
-    description: 'Three times the length of a standard roll, engineered for high-volume checkouts where every roll change slows the queue. The reinforced core and even winding handle fast feed rates without tearing or telescoping.\n\nOne jumbo roll typically replaces three standard rolls, cutting both cost per meter and counter downtime during rush hours.',
-    specifications: { 'Width': '80 mm', 'Length': '180 m', 'Core diameter': '25 mm (1 inch)', 'Material': 'BPA-free thermal paper', 'Packing': '1 jumbo roll', 'Best for': 'High-volume checkouts' },
-    seedReviews: [
-      { name: 'Kamran Aslam', rating: 5, date: new Date('2025-01-18'), text: 'Jumbo rolls save us so many roll changes during rush hours. Quality is consistent across the whole batch.' },
-      { name: 'Zainab Sheikh', rating: 5, date: new Date('2024-12-22'), text: 'BPA-free as advertised, and the price per meter is the best I found anywhere.' }
-    ]
-  },
-  {
-    id: 'rp-105', slug: 'bond-roll-2ply', name: 'Bond Paper Roll 80mm × 76m (2-Ply)',
-    price: 520, oldPrice: null, category: 'thermal-paper', categoryName: 'Thermal Paper',
-    stock: 60, rating: 4.4, reviewCount: 2, featured: false, isPublished: true,
-    keywords: ['bond paper', '2 ply', 'carbon copy', 'duplicate', '76m'],
-    images: img('rp-bond-2ply'),
-    shortDescription: 'Two-ply bond roll that produces an original plus a legible duplicate copy — no ink required.',
-    description: 'For businesses that need a customer copy and a record copy from the same print, this 2-ply bond roll produces a crisp top sheet and a clean second impression through impact of the print head. Standard width fits most classic billing machines and ECRs.',
-    specifications: { 'Width': '80 mm', 'Length': '76 m', 'Ply': '2-ply (white / white)', 'Type': 'Impact bond paper', 'Packing': '1 roll' },
-    seedReviews: [
-      { name: 'Naveed Iqbal', rating: 4, date: new Date('2024-11-08'), text: 'Both copies print clearly. Good for our carbon-copy invoices at the workshop.' },
-      { name: 'Maham Raza', rating: 4, date: new Date('2024-09-27'), text: 'Solid 2-ply rolls. Slightly expensive but the quality justifies it.' }
-    ]
-  },
-  {
-    id: 'rp-106', slug: 'bt-thermal-printer-58', name: 'Bluetooth Thermal Receipt Printer (58mm)',
-    price: 6500, oldPrice: 7900, category: 'pos-products', categoryName: 'POS Products',
-    stock: 18, rating: 4.6, reviewCount: 3, featured: true, isPublished: true,
-    keywords: ['printer', 'bluetooth', '58mm', 'pos', 'thermal printer', 'android'],
-    images: img('rp-printer-58'),
-    shortDescription: 'Compact Bluetooth + USB thermal printer for Android/iOS POS apps. 203 dpi, fast and quiet.',
-    description: 'A pocket-friendly workhorse for small businesses: pairs with Android or iOS billing apps over Bluetooth 4.0, or plugs in over USB for desktop setups. The 203 dpi head prints logos and QR codes sharply at up to 90mm per second.\n\nThe 1500mAh battery runs a full shop shift on one charge, and it pairs perfectly with our 57mm rolls.',
-    specifications: { 'Connectivity': 'Bluetooth 4.0 + USB', 'Print width': '58 mm', 'Resolution': '203 dpi', 'Speed': '90 mm/sec', 'Battery': '1500 mAh (5–6 hrs)', 'Warranty': '6 months' },
-    seedReviews: [
-      { name: 'Hamza Sheikh', rating: 5, date: new Date('2025-01-09'), text: 'Connected to our Android POS in minutes. Print speed is good and the battery lasts a full shift.' },
-      { name: 'Rabia Anwar', rating: 4, date: new Date('2024-12-11'), text: 'Compact printer, decent build. The manual is a bit short but setup was easy.' },
-      { name: 'Faisal Mehmood', rating: 5, date: new Date('2024-11-25'), text: 'Second one I have bought. Works with the RollPoint 57mm rolls perfectly.' }
-    ]
-  },
-  {
-    id: 'rp-107', slug: 'barcode-scanner-1d', name: 'USB Laser Barcode Scanner — 1D',
-    price: 4200, oldPrice: 5000, category: 'pos-products', categoryName: 'POS Products',
-    stock: 25, rating: 4.5, reviewCount: 2, featured: true, isPublished: true,
-    keywords: ['barcode', 'scanner', 'laser', 'usb', '1d', 'retail'],
-    images: img('rp-scanner-1d'),
-    shortDescription: 'Fast handheld 1D laser scanner — plug-and-play USB, reads damaged labels in one pass.',
-    description: 'A rugged handheld scanner built for retail counters: 200 scans per second, a wide working range, and aggressive decoding that reads torn or partially covered labels in a single pass. True plug-and-play — no drivers on Windows, Linux or Android POS terminals.\n\nComes with a 1.8m heavy-duty USB cable and an adjustable stand for hands-free scanning.',
-    specifications: { 'Type': '1D laser', 'Scan speed': '200 scans/sec', 'Interface': 'USB 2.0 (plug & play)', 'Cable': '1.8 m reinforced', 'Stand': 'Included', 'Warranty': '6 months' },
-    seedReviews: [
-      { name: 'Omar Farooq', rating: 5, date: new Date('2024-12-30'), text: 'Scans even cracked labels instantly. Plug and play with no drivers on Windows.' },
-      { name: 'Sadia Khan', rating: 4, date: new Date('2024-11-14'), text: 'Good range and very fast scanning. The cable could be a little longer.' }
-    ]
-  },
-  {
-    id: 'rp-108', slug: 'cash-drawer-4x5', name: 'POS Cash Drawer — 4 Bill / 5 Coin',
-    price: 7800, oldPrice: null, category: 'pos-products', categoryName: 'POS Products',
-    stock: 9, rating: 4.7, reviewCount: 2, featured: false, isPublished: true,
-    keywords: ['cash drawer', 'pos', 'money drawer', 'steel', 'rj11'],
-    images: img('rp-cash-drawer'),
-    shortDescription: 'Heavy steel cash drawer with 4 bill and 5 coin compartments. Opens via printer kick (RJ11) or key.',
-    description: 'A proper counter drawer: cold-rolled steel body, ceramic-roller bearings for smooth slide action, and a 3-position lock with full manual override. Opens automatically from your receipt printer via the included RJ11 kick cable.\n\nAdjustable bill dividers and removable coin trays let you arrange compartments for Pakistani denominations.',
-    specifications: { 'Size': '410 × 415 × 100 mm', 'Bill slots': '4 (adjustable)', 'Coin slots': '5 (removable)', 'Lock': '3-position + RJ11 kick', 'Body': 'Cold-rolled steel' },
-    seedReviews: [
-      { name: 'Adnan Yousaf', rating: 5, date: new Date('2024-12-05'), text: 'Heavy and sturdy, opens smoothly with the printer kick. Exactly what our supermarket needed.' },
-      { name: 'Mariam Siddiqui', rating: 5, date: new Date('2024-10-21'), text: 'Solid drawer with smooth coin slots. Great value at this price.' }
-    ]
-  },
-  {
-    id: 'rp-109', slug: 'mini-sticker-57x30', name: 'Mini Printer Sticker Paper 57×30mm (3 Rolls)',
-    price: 450, oldPrice: 560, category: 'mini-printer-paper', categoryName: 'Mini Printer Paper',
-    stock: 130, rating: 4.8, reviewCount: 2, featured: true, isPublished: true,
-    keywords: ['sticker paper', 'mini printer', '57x30', 'periPage', 'pocket printer', 'labels'],
-    images: img('rp-sticker-57x30'),
-    shortDescription: 'Self-adhesive sticker paper for mini pocket printers — 3 rolls per pack, strong glue, no residue.',
-    description: 'Turn any pocket printer into a label maker. These 57×30mm thermal stickers use a strong yet clean-peeling adhesive that holds on paper, plastic and glass — and removes without sticky residue.\n\nBlack-and-white prints come out dark and smudge-proof, perfect for jar labels, name tags, study notes and small-price stickers.',
-    specifications: { 'Sticker size': '57 × 30 mm', 'Rolls': '3 per pack', 'Adhesive': 'Permanent, residue-free', 'Print': 'Direct thermal, B/W', 'Compatible': 'PeriPage, Phomemo & similar' },
-    seedReviews: [
-      { name: 'Areeba Hussain', rating: 5, date: new Date('2025-01-15'), text: 'Stickers stick properly and print dark. My kids use the mini printer non-stop and these last long.' },
-      { name: 'Talha Bin Masood', rating: 4, date: new Date('2024-12-08'), text: 'Good adhesive, no residue when removed from plastic boxes. Will reorder.' }
-    ]
-  },
-  {
-    id: 'rp-110', slug: 'mini-paper-57x25', name: 'Pocket Printer Paper 57×25mm (5 Rolls)',
-    price: 600, oldPrice: null, category: 'mini-printer-paper', categoryName: 'Mini Printer Paper',
-    stock: 88, rating: 4.6, reviewCount: 2, featured: false, isPublished: true,
-    keywords: ['mini printer', '57x25', 'periPage', 'phomemo', 'paper roll', 'pocket'],
-    images: img('rp-paper-57x25'),
-    shortDescription: 'Value pack of five regular paper rolls for pocket thermal printers. Smooth, jam-free feeding.',
-    description: 'Keep your pocket printer stocked for months. Five tightly-wound 57×25mm rolls with a smooth thermal surface that protects print heads and delivers clear, gray-free text for lists, receipts and journaling prints.',
-    specifications: { 'Roll size': '57 × 25 mm Ø', 'Rolls': '5 per pack', 'Surface': 'Smooth thermal', 'Compatible': 'PeriPage, Phomemo & similar' },
-    seedReviews: [
-      { name: 'Junaid Akhtar', rating: 5, date: new Date('2024-11-30'), text: 'Five rolls at this price is a steal. Prints are clear and never smudge.' },
-      { name: 'Nimra Khalid', rating: 4, date: new Date('2024-10-12'), text: 'Fits my PeriPage perfectly. Slight curl at the roll end but prints fine.' }
-    ]
-  },
-  {
-    id: 'rp-111', slug: 'thermal-label-4x6', name: 'Thermal Shipping Label 4″ × 6″ (500 Labels)',
-    price: 1350, oldPrice: 1600, category: 'labels', categoryName: 'Labels',
-    stock: 74, rating: 4.9, reviewCount: 3, featured: true, isPublished: true,
-    keywords: ['shipping label', '4x6', 'courier', 'thermal label', '500', 'ecommerce'],
-    images: img('rp-label-4x6'),
-    shortDescription: 'The e-commerce standard: 500 strong-adhesive 4×6 shipping labels per roll. Smudge-proof, scanner-friendly.',
-    description: 'The label trusted by online sellers: 4×6 inch direct-thermal labels with permanent adhesive that grips poly bags, corrugated boxes and padded mailers. The high-contrast coating keeps barcodes scannable even after rain, rubbing and long transit.\n\nFade-resistant for over a year, compatible with all major 4×6 thermal printers, and wound on a 25mm core.',
-    specifications: { 'Label size': '4 × 6 in (101 × 152 mm)', 'Labels per roll': '500', 'Adhesive': 'Permanent, strong-grip', 'Core': '25 mm (1 in)', 'Printer type': 'Direct thermal' },
-    seedReviews: [
-      { name: 'Hassan Raza', rating: 5, date: new Date('2025-01-20'), text: 'Shipping labels peel easily and the print never fades. We ship 100+ parcels daily on these.' },
-      { name: 'Kiran Shahzadi', rating: 5, date: new Date('2024-12-19'), text: 'Work flawlessly with our 4x6 printer. Dark, smudge-free barcodes every time.' },
-      { name: 'Waqar Ahmed', rating: 4, date: new Date('2024-11-02'), text: 'Strong adhesive even on poly bags. Best price I found for 500 labels.' }
-    ]
-  },
-  {
-    id: 'rp-112', slug: 'thermal-label-100x150', name: 'Thermal Label Roll 100×150mm (250 pcs)',
-    price: 980, oldPrice: null, category: 'labels', categoryName: 'Labels',
-    stock: 51, rating: 4.5, reviewCount: 2, featured: false, isPublished: true,
-    keywords: ['label', '100x150', 'courier', 'manifest', 'warehouse'],
-    images: img('rp-label-100x150'),
-    shortDescription: 'Versatile 100×150mm labels for courier manifests, warehouse tags and bulk carton marking.',
-    description: 'A slightly narrower alternative to 4×6 — same permanent adhesive and thermal coating, sized for courier manifests, warehouse shelf tags and carton labelling. Consistent die-cutting means the liner peels cleanly at speed.',
-    specifications: { 'Label size': '100 × 150 mm', 'Labels per roll': '250', 'Adhesive': 'Permanent', 'Core': '25 mm', 'Printer type': 'Direct thermal' },
-    seedReviews: [
-      { name: 'Danish Ali', rating: 4, date: new Date('2024-12-26'), text: 'Good size for courier manifests. Print is sharp and scanning never fails.' },
-      { name: 'Sana Tariq', rating: 5, date: new Date('2024-11-11'), text: 'Exactly 250 pieces as promised, no misprints in the roll.' }
-    ]
-  },
-  {
-    id: 'rp-113', slug: 'thermal-label-30x20', name: 'Thermal Label 30×20mm (1,000 pcs)',
-    price: 520, oldPrice: null, category: 'labels', categoryName: 'Labels',
-    stock: 0, rating: 4.3, reviewCount: 1, featured: false, isPublished: true,
-    keywords: ['small label', '30x20', 'price label', 'jewellery', '1000'],
-    images: img('rp-label-30x20'),
-    shortDescription: 'Tiny 30×20mm labels for jewellery tagging, electronics serials and small-price marking.',
-    description: 'Small but mighty: a thousand 30×20mm thermal labels for price tags, serial numbers and barcode marking on small items. Strong mini-dot adhesive holds on metal, plastic and glass surfaces.',
-    specifications: { 'Label size': '30 × 20 mm', 'Labels per roll': '1,000', 'Adhesive': 'Strong mini-dot', 'Printer type': 'Direct thermal' },
-    seedReviews: [
-      { name: 'Imran Baig', rating: 4, date: new Date('2024-10-05'), text: 'Small labels perfect for jewellery pricing. Hopefully restocked soon — I need them monthly.' }
-    ]
-  },
-  {
-    id: 'rp-114', slug: 'price-gun-kit', name: 'Price Gun Labeller + 1,000 Labels',
-    price: 1850, oldPrice: 2200, category: 'other-products', categoryName: 'Other Products',
-    stock: 34, rating: 4.4, reviewCount: 1, featured: false, isPublished: true,
-    keywords: ['price gun', 'labeller', 'tag gun', 'pricing', 'starter kit'],
-    images: img('rp-price-gun'),
-    shortDescription: 'One-line price gun with smooth trigger action, bundled with 1,000 starter labels.',
-    description: 'Everything a small shop needs to start pricing products: a durable one-line price gun with a clear display window, smooth trigger action and refill loading in seconds. The bundle includes 1,000 compatible labels to get you printing on day one.',
-    specifications: { 'Lines': '1 line, 8 digits', 'Labels': '1,000 included (21×12 mm)', 'Body': 'ABS + metal mechanism', 'Loading': 'Drop-in roll' },
-    seedReviews: [
-      { name: 'Moiz Ahmed', rating: 4, date: new Date('2024-12-13'), text: 'Gun feels sturdy and labels feed without tearing. The included labels are good quality too.' }
-    ]
-  },
-  {
-    id: 'rp-115', slug: 'card-machine-roll-57x35', name: 'Card Machine Roll 57×35mm (EFTPOS)',
-    price: 210, oldPrice: null, category: 'other-products', categoryName: 'Other Products',
-    stock: 64, rating: 4.7, reviewCount: 2, featured: false, isPublished: true,
-    keywords: ['card machine', 'eftpos', '57x35', 'bank', 'merchant roll'],
-    images: img('rp-card-roll'),
-    shortDescription: 'Correct-width rolls for bank card machines (EFTPOS) — no more forcing wrong paper into terminals.',
-    description: 'Bank card terminals are fussy about paper width — these 57×35mm rolls are slitted to spec for common EFTPOS machines, with end-tape that lifts cleanly so the roll feeds right on the first try. Sold singly or in counter packs.',
-    specifications: { 'Width': '57 mm', 'Roll Ø': '35 mm', 'Core': 'Coreless', 'End tape': 'Easy-lift', 'Compatible': 'Most EFTPOS terminals' },
-    seedReviews: [
-      { name: 'Yasir Hussain', rating: 5, date: new Date('2025-01-07'), text: 'Fits our bank card machine exactly. No more struggling with wrong-width rolls.' },
-      { name: 'Alina Zafar', rating: 4, date: new Date('2024-12-01'), text: 'Good quality and quick delivery. Will order in a pack next time.' }
+      { name: 'Fatima Noor', rating: 5, date: new Date('2025-02-25'), text: 'Birthday party ke liye mangwaye thay, bohat pyaray aur bright colors hain! Quality bhi achi hai.' },
+      { name: 'Bilal Siddiqui', rating: 5, date: new Date('2025-03-02'), text: 'Very good flexible bendy straws. Kids loved using them for juices and milkshakes.' },
+      { name: 'Nadia Qasim', rating: 5, date: new Date('2025-03-10'), text: 'Fast delivery and very economical 50/100 pack. Highly recommended for events!' }
     ]
   }
 ];
@@ -262,21 +225,25 @@ async function seedDatabase() {
       console.log(`✅ Default admin account created: ${adminEmail}`);
     }
 
-    // 3. Seed Categories if empty
-    const categoryCount = await Category.countDocuments();
-    if (categoryCount === 0) {
-      for (const cat of INITIAL_CATEGORIES) {
-        await Category.create(cat);
+    // 3. Seed missing Categories
+    for (const cat of INITIAL_CATEGORIES) {
+      const existingCat = await Category.findOne({ slug: cat.slug });
+      if (!existingCat) {
+        await Category.create(cat).catch(() => null);
+        console.log(`✅ Seeded missing category: ${cat.name}`);
+      } else if (cat.image && !existingCat.image) {
+        existingCat.image = cat.image;
+        await existingCat.save().catch(() => null);
       }
-      console.log(`✅ Seeded ${INITIAL_CATEGORIES.length} initial categories into database.`);
     }
 
-    // 4. Seed Products and Reviews if empty
-    const productCount = await Product.countDocuments();
-    if (productCount === 0) {
-      for (const p of INITIAL_PRODUCTS) {
+    // 4. Seed missing Products
+    for (const p of INITIAL_PRODUCTS) {
+      const existingProd = await Product.findOne({ $or: [{ id: p.id }, { slug: p.slug }] });
+      if (!existingProd) {
         const { seedReviews, ...productData } = p;
         const createdProduct = await Product.create(productData);
+        console.log(`✅ Seeded missing product: ${p.name}`);
 
         if (seedReviews && seedReviews.length) {
           for (const rev of seedReviews) {
@@ -288,15 +255,18 @@ async function seedDatabase() {
               text: rev.text,
               status: 'approved',
               date: rev.date || new Date()
-            });
+            }).catch(() => null);
           }
         }
       }
-      console.log(`✅ Seeded ${INITIAL_PRODUCTS.length} initial products and approved reviews into database.`);
     }
   } catch (err) {
     console.error('⚠️ Database seed check error:', err.message);
   }
 }
 
-module.exports = { seedDatabase, INITIAL_CATEGORIES };
+module.exports = {
+  INITIAL_CATEGORIES,
+  INITIAL_PRODUCTS,
+  seedDatabase
+};

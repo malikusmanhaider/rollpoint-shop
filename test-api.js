@@ -182,7 +182,19 @@ async function runTests() {
     });
     assert(createCatRes.status === 201 && createCatRes.data.category.slug === testCatSlug, 'Admin created new category');
 
-    // 13. Admin Product in New Category
+    // 13. Admin Category Update (PUT)
+    const updatedCatName = `Updated Scanners ${Date.now()}`;
+    const updateCatRes = await request(`/api/products/categories/${testCatSlug}`, {
+      method: 'PUT',
+      headers: authHeaders,
+      body: {
+        name: updatedCatName,
+        tagline: 'High-speed barcode and wireless scanners'
+      }
+    });
+    assert(updateCatRes.status === 200 && updateCatRes.data.category.name === updatedCatName, 'Admin updated category details');
+
+    // 14. Admin Product in New Category
     const createProdInCatRes = await request('/api/products', {
       method: 'POST',
       headers: authHeaders,
@@ -196,7 +208,7 @@ async function runTests() {
     assert(createProdInCatRes.status === 201 && createProdInCatRes.data.product.category === testCatSlug, 'Product created in new category');
     const testProdId = createProdInCatRes.data.product.id;
 
-    // 14. Admin Delete Category with Shift Option
+    // 15. Admin Delete Category with Shift Option
     const shiftDelCatRes = await request(`/api/products/categories/${testCatSlug}`, {
       method: 'DELETE',
       headers: authHeaders,
