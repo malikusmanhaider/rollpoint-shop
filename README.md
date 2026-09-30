@@ -1,4 +1,4 @@
-# RollPoint — Complete Full-Stack E-Commerce Website
+﻿# RollsPoint — Complete Full-Stack E-Commerce Website
 
 A production-ready full-stack e-commerce system with dynamic product catalog, thermal receipt order flow, direct WhatsApp ordering, customer reviews moderation, theme customization, and an integrated staff Admin Panel.
 

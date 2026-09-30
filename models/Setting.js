@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const settingSchema = new mongoose.Schema({
   key: {
@@ -8,7 +8,7 @@ const settingSchema = new mongoose.Schema({
   },
   websiteName: {
     type: String,
-    default: 'RollPoint'
+    default: 'RollsPoint'
   },
   tagline: {
     type: String,
@@ -64,7 +64,7 @@ const settingSchema = new mongoose.Schema({
   },
   footerAboutText: {
     type: String,
-    default: 'RollPoint supplies genuine BPA-free thermal rolls, labels and POS hardware to counters across Pakistan — dispatched within 24 hours, delivered on cash-on-delivery.'
+    default: 'RollsPoint supplies genuine BPA-free thermal rolls, labels and POS hardware to counters across Pakistan — dispatched within 24 hours, delivered on cash-on-delivery.'
   },
   heroKicker: {
     type: String,

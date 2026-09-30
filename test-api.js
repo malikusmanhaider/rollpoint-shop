@@ -1,5 +1,5 @@
-/**
- * RollPoint E-Commerce API End-to-End Verification Test Script
+﻿/**
+ * RollsPoint E-Commerce API End-to-End Verification Test Script
  */
 const http = require('http');
 
@@ -51,7 +51,7 @@ function request(path, options = {}) {
 }
 
 async function runTests() {
-  console.log('🧪 Starting RollPoint Full-Stack Test Suite...\n');
+  console.log('🧪 Starting RollsPoint Full-Stack Test Suite...\n');
   let passed = 0;
   let failed = 0;
 
@@ -159,14 +159,14 @@ async function runTests() {
       method: 'PUT',
       headers: authHeaders,
       body: {
-        websiteName: 'RollPoint',
+        websiteName: 'RollsPoint',
         tagline: 'Counter supplies, delivered.',
         whatsappNumber: '0308 9134302',
         whatsappIntl: '923089134302',
         shippingRate: 250
       }
     });
-    assert(updateSettingsRes.status === 200 && updateSettingsRes.data.settings.websiteName === 'RollPoint', 'Admin updated website settings');
+    assert(updateSettingsRes.status === 200 && updateSettingsRes.data.settings.websiteName === 'RollsPoint', 'Admin updated website settings');
 
     // 12. Admin Category Creation
     const testCatSlug = `test-cat-${Date.now()}`;

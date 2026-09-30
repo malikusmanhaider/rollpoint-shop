@@ -1,5 +1,5 @@
-/* ================================================================
-   ROLLPOINT — CORE CUSTOMER APPLICATION
+﻿/* ================================================================
+   ROLLSPOINT — CORE CUSTOMER APPLICATION
    Full-stack integration connecting dynamic MongoDB data,
    thermal receipt engine, order checkout, WhatsApp flow,
    and customer reviews.
@@ -7,7 +7,7 @@
 
 // Live Business Config (loaded dynamically from database settings)
 let BUSINESS = {
-  name: 'RollPoint',
+  name: 'RollsPoint',
   tagline: 'Counter supplies, delivered.',
   logo: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1790260393/rollpoint/brand/rollpoint-official-logo.webp',
   heroKicker: '// Counter supplies · Pakistan',
@@ -34,7 +34,7 @@ let BUSINESS = {
   mapsUrl: 'https://maps.app.goo.gl/N9xDnGzuN3n8PbCD6?g_st=awb',
   hours: 'Mon–Sat · 10:00 am – 8:00 pm',
   shippingRate: 250,
-  footerAboutText: 'RollPoint supplies genuine BPA-free thermal rolls, labels and POS hardware to counters across Pakistan — dispatched within 24 hours, delivered on cash-on-delivery.'
+  footerAboutText: 'RollsPoint supplies genuine BPA-free thermal rolls, labels and POS hardware to counters across Pakistan — dispatched within 24 hours, delivered on cash-on-delivery.'
 };
 
 // Utilities
@@ -87,7 +87,7 @@ const OrderMath = {
       `*City:* ${order.customerCity || order.customer?.city}`,
       (order.customerNotes || order.customer?.notes) ? `*Notes:* ${order.customerNotes || order.customer?.notes}` : null,
       '',
-      '_Sent via RollPoint Web Checkout_'
+      '_Sent via RollsPoint Web Checkout_'
     ].filter(Boolean);
     return lines.join('\n');
   }
@@ -97,7 +97,7 @@ const OrderMath = {
 const Components = {
   logo(bg = 'var(--ink)', fg = 'var(--paper)') {
     if (BUSINESS.logo) {
-      return `<img src="${BUSINESS.logo}" alt="${esc(BUSINESS.name || 'RollPoint')}" class="brand-logo-img">`;
+      return `<img src="${BUSINESS.logo}" alt="${esc(BUSINESS.name || 'RollsPoint')}" class="brand-logo-img">`;
     }
     return `<svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
       <rect width="40" height="40" rx="10" fill="${bg}"/>
@@ -110,7 +110,7 @@ const Components = {
   brand(dark = false) {
     return `<a class="brand" href="#/" aria-label="${BUSINESS.name} home">
       ${this.logo(dark ? 'var(--inv)' : 'var(--ink)', dark ? 'var(--ink-bg)' : 'var(--paper)')}
-      <span class="brand-name">${esc(BUSINESS.name || 'RollPoint')}</span></a>`;
+      <span class="brand-name">${esc(BUSINESS.name || 'RollsPoint')}</span></a>`;
   },
 
   productCard(p, catName) {
@@ -294,7 +294,7 @@ const Pages = {
             <p class="hero-sub">${esc(BUSINESS.heroSubtitle || 'Genuine BPA-free thermal paper, shipping labels and point-of-sale hardware for shops that never stop. Flat Rs. 250 delivery, cash on delivery, nationwide.')}</p>
             <div class="hero-cta">
               <a class="btn btn-ink btn-lg" href="#/shop">${esc(BUSINESS.heroBtn1Text || 'Shop all products')} <i data-lucide="arrow-right"></i></a>
-              <a class="btn btn-whatsapp btn-lg" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent('Hi RollPoint! I want to order thermal rolls & supplies.')}" target="_blank">
+              <a class="btn btn-whatsapp btn-lg" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent('Hi RollsPoint! I want to order thermal rolls & supplies.')}" target="_blank">
                 <i data-lucide="message-circle"></i> Chat on WhatsApp
               </a>
             </div>
@@ -563,7 +563,7 @@ const Pages = {
                 ${out ? 'disabled' : ''}>
                 <i data-lucide="package"></i> Order Now (COD)
               </button>
-              <a class="btn btn-whatsapp btn-buy-wa" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollPoint! I want to order ${p.name} (${formatPrice(initialPrice)}). Please confirm availability.`)}" target="_blank">
+              <a class="btn btn-whatsapp btn-buy-wa" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollsPoint! I want to order ${p.name} (${formatPrice(initialPrice)}). Please confirm availability.`)}" target="_blank">
                 <i data-lucide="message-circle"></i> Order via WhatsApp
               </a>
             </div>
@@ -726,7 +726,7 @@ const Pages = {
                 <p class="confirm-note">Cash on delivery · Flat Rs. 250 shipping · Instant WhatsApp confirmation</p>
                 <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line-2)">
                   <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Skip typing address? Order directly on WhatsApp:</p>
-                  <a class="btn btn-whatsapp btn-sm btn-block" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollPoint! I want to order ${p.name}${selectedVariation ? ` (${selectedVariation.name})` : ''} (Qty: ${qty}, Total: ${formatPrice(total)} COD). Please confirm my order.`)}" target="_blank">
+                  <a class="btn btn-whatsapp btn-sm btn-block" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollsPoint! I want to order ${p.name}${selectedVariation ? ` (${selectedVariation.name})` : ''} (Qty: ${qty}, Total: ${formatPrice(total)} COD). Please confirm my order.`)}" target="_blank">
                     <i data-lucide="message-circle"></i> Quick Order via WhatsApp
                   </a>
                 </div>
@@ -991,7 +991,7 @@ const UI = {
         <i data-lucide="layout-grid"></i>
         <span>Categories</span>
       </a>
-      <a class="m-tab wa-tab" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent('Hi RollPoint! I want to inquire about products.')}" target="_blank" data-tab="whatsapp">
+      <a class="m-tab wa-tab" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent('Hi RollsPoint! I want to inquire about products.')}" target="_blank" data-tab="whatsapp">
         <i data-lucide="message-circle"></i>
         <span>WhatsApp</span>
       </a>
@@ -1034,7 +1034,7 @@ const UI = {
           </div>
         </div>
         <div class="pdp-sticky-actions">
-          <a class="pdp-sticky-btn wa-btn" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollPoint! I want to order ${p.name}${selectedVar ? ` (Variation: ${selectedVar.name})` : ''} (${formatPrice(effectivePrice)}).`)}" target="_blank" title="WhatsApp Order">
+          <a class="pdp-sticky-btn wa-btn" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(`Hi RollsPoint! I want to order ${p.name}${selectedVar ? ` (Variation: ${selectedVar.name})` : ''} (${formatPrice(effectivePrice)}).`)}" target="_blank" title="WhatsApp Order">
             <i data-lucide="message-circle"></i>
           </a>
           <button class="btn btn-accent pdp-sticky-btn" data-action="order-now" data-id="${p.id}"
@@ -1270,7 +1270,7 @@ const Actions = {
     const waBtn = document.querySelector('.btn-buy-wa');
     if (waBtn) {
       const productName = document.querySelector('.pdp-info h1')?.textContent || '';
-      const msg = `Hi RollPoint! I want to order ${productName} (Variation: ${name}, ${formatPrice(price)}). Please confirm availability.`;
+      const msg = `Hi RollsPoint! I want to order ${productName} (Variation: ${name}, ${formatPrice(price)}). Please confirm availability.`;
       waBtn.href = `https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(msg)}`;
     }
 
@@ -1290,7 +1290,7 @@ const Actions = {
     }
     if (stickyWa) {
       const productName = document.querySelector('.pdp-info h1')?.textContent || '';
-      const msg = `Hi RollPoint! I want to order ${productName} (Variation: ${name}, ${formatPrice(price)}).`;
+      const msg = `Hi RollsPoint! I want to order ${productName} (Variation: ${name}, ${formatPrice(price)}).`;
       stickyWa.href = `https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent(msg)}`;
     }
   },

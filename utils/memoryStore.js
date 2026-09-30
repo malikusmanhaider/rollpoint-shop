@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs');
+﻿const bcrypt = require('bcryptjs');
 
 /**
  * In-Memory Store Fallback for local development when MongoDB Atlas URI is pending.
@@ -32,7 +32,7 @@ class MemoryStore {
       // Default settings
       this.settings = {
         key: 'main_settings',
-        websiteName: process.env.STORE_NAME || 'RollPoint',
+        websiteName: process.env.STORE_NAME || 'RollsPoint',
         tagline: 'Counter supplies, delivered.',
         whatsappNumber: process.env.WHATSAPP_NUMBER || '0308 9134302',
         whatsappIntl: process.env.WHATSAPP_INTL || '923089134302',
@@ -45,7 +45,7 @@ class MemoryStore {
         heroProductSlug: 'pocket-inkless-mini-thermal-printer-bluetooth',
         primaryColor: '#D14A0E',
         secondaryColor: '#221B10',
-        footerAboutText: 'RollPoint supplies pocket mini printers, portable fans, party items and counter supplies across Pakistan.'
+        footerAboutText: 'RollsPoint supplies pocket mini printers, portable fans, party items and counter supplies across Pakistan.'
       };
 
       // Default admin with hashed password
@@ -53,7 +53,7 @@ class MemoryStore {
       const hashedPassword = await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD || 'admin123', salt);
       this.admins.push({
         _id: 'admin-01',
-        name: process.env.DEFAULT_ADMIN_NAME || 'RollPoint Administrator',
+        name: process.env.DEFAULT_ADMIN_NAME || 'RollsPoint Administrator',
         email: (process.env.DEFAULT_ADMIN_EMAIL || 'admin@rollpoint.pk').toLowerCase(),
         password: hashedPassword,
         role: 'superadmin',

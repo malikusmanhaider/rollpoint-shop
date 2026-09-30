@@ -1,5 +1,5 @@
-/* ================================================================
-   ROLLPOINT — ADMIN CONTROLLER & UI
+﻿/* ================================================================
+   ROLLSPOINT — ADMIN CONTROLLER & UI
    Full administrative suite: Dashboard metrics, Product CRUD,
    Order Lifecycle, Reviews Moderation, and Theme/Website Settings.
    ================================================================ */
@@ -39,7 +39,7 @@ const AdminUI = {
       <div class="admin-card reveal in">
         <div class="lock-ring"><i data-lucide="shield-check"></i></div>
         <h1>Staff Administration</h1>
-        <p>Access the RollPoint management system for products, orders, and website settings.</p>
+        <p>Access the RollsPoint management system for products, orders, and website settings.</p>
         
         <form id="admin-login-form" novalidate>
           <div class="field" style="margin-bottom:14px">
@@ -79,7 +79,7 @@ const AdminUI = {
       try {
         const res = await Api.adminLogin(email, password);
         if (res.ok) {
-          UI.toast('Welcome to RollPoint Admin Dashboard', 'check-circle-2', 'success');
+          UI.toast('Welcome to RollsPoint Admin Dashboard', 'check-circle-2', 'success');
           AdminUI.render(container);
         }
       } catch (err) {
@@ -1744,7 +1744,7 @@ const AdminUI = {
           <div class="form-grid">
             <div class="field">
               <label for="st-name">Website / Store Name</label>
-              <input id="st-name" type="text" value="${esc(s.websiteName || 'RollPoint')}" required>
+              <input id="st-name" type="text" value="${esc(s.websiteName || 'RollsPoint')}" required>
             </div>
             <div class="field">
               <label for="st-tagline">Tagline</label>

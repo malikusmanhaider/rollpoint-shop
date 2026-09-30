@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const adminSchema = new mongoose.Schema({
@@ -6,7 +6,7 @@ const adminSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    default: 'RollPoint Administrator'
+    default: 'RollsPoint Administrator'
   },
   email: {
     type: String,

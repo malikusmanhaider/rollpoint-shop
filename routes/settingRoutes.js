@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const Setting = require('../models/Setting');
 const { requireAdmin } = require('../middleware/auth');
@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
       if (!settings) {
         settings = await Setting.create({
           key: 'main_settings',
-          websiteName: process.env.STORE_NAME || 'RollPoint',
+          websiteName: process.env.STORE_NAME || 'RollsPoint',
           tagline: 'Counter supplies, delivered.',
           whatsappNumber: process.env.WHATSAPP_NUMBER || '0308 9134302',
           whatsappIntl: process.env.WHATSAPP_INTL || '923089134302',

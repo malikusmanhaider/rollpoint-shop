@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -42,7 +42,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
     timestamp: new Date().toISOString(),
-    store: process.env.STORE_NAME || 'RollPoint',
+    store: process.env.STORE_NAME || 'RollsPoint',
     version: '1.0.0'
   });
 });
@@ -72,7 +72,7 @@ async function startServer() {
   app.listen(PORT, () => {
     console.log(`
 =====================================================
-🚀 ROLLPOINT E-COMMERCE SERVER RUNNING
+🚀 ROLLSPOINT E-COMMERCE SERVER RUNNING
 =====================================================
 📡 Port:        http://localhost:${PORT}
 🛍️ Customer UI: http://localhost:${PORT}/#/

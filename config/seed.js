@@ -1,4 +1,4 @@
-const Product = require('../models/Product');
+﻿const Product = require('../models/Product');
 const Review = require('../models/Review');
 const Admin = require('../models/Admin');
 const Setting = require('../models/Setting');
@@ -199,7 +199,7 @@ async function seedDatabase() {
     const settingsCount = await Setting.countDocuments();
     if (settingsCount === 0) {
       await Setting.create({
-        websiteName: process.env.STORE_NAME || 'RollPoint',
+        websiteName: process.env.STORE_NAME || 'RollsPoint',
         tagline: 'Counter supplies, delivered.',
         whatsappNumber: process.env.WHATSAPP_NUMBER || '0308 9134302',
         whatsappIntl: process.env.WHATSAPP_INTL || '923089134302',

@@ -1,5 +1,5 @@
-/* ================================================================
-   ROLLPOINT — CLIENT API LAYER
+﻿/* ================================================================
+   ROLLSPOINT — CLIENT API LAYER
    Production HTTP client talking directly to the Node.js / Express API.
    Handles public queries, order submission, reviews moderation,
    and authenticated admin operations.

@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
@@ -35,7 +35,7 @@ function buildWhatsAppPayload(order, whatsappIntl = '923089134302') {
     `*City:* ${order.customerCity}`,
     order.customerNotes ? `*Notes:* ${order.customerNotes}` : null,
     '',
-    '_Sent via RollPoint Web Checkout_'
+    '_Sent via RollsPoint Web Checkout_'
   ].filter(Boolean);
 
   const messageText = lines.join('\n');

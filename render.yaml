@@ -1,4 +1,4 @@
-services:
+﻿services:
   - type: web
     name: rollpoint-shop
     env: node
@@ -22,7 +22,7 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false
       - key: STORE_NAME
-        value: RollPoint
+        value: RollsPoint
       - key: STORE_EMAIL
         value: malikusmanhaider0346@gmail.com
       - key: STORE_ADDRESS
