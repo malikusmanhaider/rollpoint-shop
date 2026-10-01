@@ -1,4 +1,4 @@
-﻿const Product = require('../models/Product');
+const Product = require('../models/Product');
 const Review = require('../models/Review');
 const Admin = require('../models/Admin');
 const Setting = require('../models/Setting');
@@ -7,7 +7,9 @@ const Category = require('../models/Category');
 const INITIAL_CATEGORIES = [
   { slug: 'mini-printer', name: 'Mini Printer', tagline: 'Portable & Bluetooth pocket printers', image: 'https://img.drz.lazcdn.com/g/kf/S036af77a759e409d9e2f3cf440217919J.png_720x720q80.png' },
   { slug: 'mini-fan', name: 'Mini Fan', tagline: 'Portable mini fans for daily carry and travel', image: 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?w=720&auto=format&fit=crop&q=80' },
-  { slug: 'party-items', name: 'Party Items', tagline: 'Colorful party straws and fun event essentials', image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=720&auto=format&fit=crop&q=80' }
+  { slug: 'party-items', name: 'Party Items', tagline: 'Colorful party straws and fun event essentials', image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=720&auto=format&fit=crop&q=80' },
+  { slug: 'winter-products', name: 'Winter Products', tagline: 'Electric lint removers & winter wool care essentials', image: 'https://img.drz.lazcdn.com/g/kf/S98cdd821656f4243a3714b89acd90f58D.png_720x720q80.png' },
+  { slug: 'discounted-products', name: 'Discounted Products', tagline: 'Special discount deals & watch accessories', image: 'https://img.drz.lazcdn.com/g/kf/Sfe2312bd41474dabaf95a1f0659dd058U.jpg_720x720q80.jpg' }
 ];
 
 const INITIAL_PRODUCTS = [
@@ -189,6 +191,93 @@ const INITIAL_PRODUCTS = [
       { name: 'Fatima Noor', rating: 5, date: new Date('2025-02-25'), text: 'Birthday party ke liye mangwaye thay, bohat pyaray aur bright colors hain! Quality bhi achi hai.' },
       { name: 'Bilal Siddiqui', rating: 5, date: new Date('2025-03-02'), text: 'Very good flexible bendy straws. Kids loved using them for juices and milkshakes.' },
       { name: 'Nadia Qasim', rating: 5, date: new Date('2025-03-10'), text: 'Fast delivery and very economical 50/100 pack. Highly recommended for events!' }
+    ]
+  },
+  {
+    id: 'rp-119',
+    slug: 'electric-lint-remover-rechargeable-fabric-shaver',
+    name: 'Electric Lint Remover for Clothes & Sweaters (USB Rechargeable Fabric Shaver Machine)',
+    price: 899,
+    oldPrice: 1999,
+    category: 'winter-products',
+    categoryName: 'Winter Products',
+    stock: 65,
+    rating: 4.9,
+    reviewCount: 4,
+    featured: true,
+    isPublished: true,
+    keywords: ['lint remover', 'electric lint remover', 'fabric shaver', 'sweater lint remover', 'fuzz remover', 'usb lint remover', 'winter products', 'wool care', 'clothes lint shaver', 'lint removal machine'],
+    variationTitle: 'Color Family',
+    variations: [
+      {
+        name: 'White & Emerald Green',
+        price: 899,
+        oldPrice: 1999,
+        image: 'https://img.drz.lazcdn.com/g/kf/S98cdd821656f4243a3714b89acd90f58D.png_720x720q80.png'
+      }
+    ],
+    images: [
+      'https://img.drz.lazcdn.com/g/kf/S98cdd821656f4243a3714b89acd90f58D.png_720x720q80.png',
+      'https://img.drz.lazcdn.com/static/pk/p/551ac32b7648a2bcbaec17e732fb8d61.png_720x720q80.png',
+      'https://img.drz.lazcdn.com/static/pk/p/e9da8299b4a3bcc7d45529ae5c3cf3ad.jpg_720x720q80.jpg',
+      'https://img.drz.lazcdn.com/static/pk/p/6b018b8abeeda7fe84bdd60e3006dda8.jpg_720x720q80.jpg',
+      'https://img.drz.lazcdn.com/static/pk/p/a3d5d62b93775f8706761db16d9ae774.jpg_720x720q80.jpg'
+    ],
+    shortDescription: 'Electric Lint Remover for Clothes & Sweaters – USB Rechargeable Fabric Shaver with Sharp Stainless Steel Blades, Safety Lock & Detachable Fuzz Container.',
+    description: 'Say goodbye to lint, fuzz, and hair balls with our Electric Lint Remover! Designed to refresh your wool clothes, sweaters, jackets, and furniture fabrics effortlessly, this fabric shaver is a winter wardrobe essential.\n\nEquipped with 3 sharp stainless steel rotary blades and a protective honeycomb mesh, it removes fuzz and pilling quickly without snagging or damaging delicate fabrics.\n\nFeaturing a USB rechargeable battery, ergonomic hand grip, detachable lint storage container, and safety lock protection (automatically stops when protective cover is open).',
+    specifications: {
+      'Product Type': 'Electric Lint Remover & Fabric Shaver',
+      'Power Source': 'USB Rechargeable (Cable Included)',
+      'Charging Time': '1.5 – 2 Hours Fast Charge',
+      'Blade Material': 'Sharp Stainless Steel 3-Leaf Rotary Blades',
+      'Safety Protection': 'Auto-Stop Safety Lock Feature',
+      'Lint Container': 'Detachable & Translucent Easy-Clean Box',
+      'Package Includes': '1× Electric Lint Remover, 1× USB Cable, 1× Cleaning Brush, 1× User Manual'
+    },
+    seedReviews: [
+      { name: 'Usman Malik', rating: 5, date: new Date('2025-02-14'), text: 'Bohat zabardast product hai! Winters ke sweaters aur coats se saari bura (lint) minute mein saaf ho gayi.' },
+      { name: 'Zahra Khan', rating: 5, date: new Date('2025-02-20'), text: 'Super fast USB charging and safe on clothes. Looks exact as shown in pictures. Highly recommended!' },
+      { name: 'Hamza Farooq', rating: 5, date: new Date('2025-03-01'), text: 'Very useful fabric shaver for winter clothes. Sharp blades and easy cleaning container.' }
+    ]
+  },
+  {
+    id: 'rp-120',
+    slug: 'watch-wrist-bracelet-watch-band-link-slit-strap-remover-adjuster',
+    name: 'Watch Wrist Bracelet Watch Band Link Slit Strap Remover Adjuster Pins Repair Tools',
+    price: 233,
+    oldPrice: 499,
+    category: 'discounted-products',
+    categoryName: 'Discounted Products',
+    stock: 100,
+    rating: 4.6,
+    reviewCount: 77,
+    featured: true,
+    isPublished: true,
+    keywords: ['watch remover', 'watch strap adjuster', 'watch band remover', 'watch repair tool', 'watch link pin remover', 'watch accessories', 'discounted products', 'watch repair kit'],
+    variationTitle: 'Color Family',
+    variations: [
+      {
+        name: 'Standard Remover Tool',
+        price: 233,
+        oldPrice: 499,
+        image: 'https://img.drz.lazcdn.com/g/kf/Sfe2312bd41474dabaf95a1f0659dd058U.jpg_720x720q80.jpg'
+      }
+    ],
+    images: [
+      'https://img.drz.lazcdn.com/g/kf/Sfe2312bd41474dabaf95a1f0659dd058U.jpg_720x720q80.jpg'
+    ],
+    shortDescription: 'Watch Wrist Bracelet Watch Band Link Slit Strap Remover Adjuster + Pins Repair Tools Watch Accessories. Easily remove pins from strap to adjust strap length.',
+    description: 'Effortlessly adjust strap length with the watch band remover, ensuring a perfect fit for any wrist size.\n\nKey Features:\n• Durable Material: Crafted from durable materials, this toolkit withstands frequent use without damage.\n• Adjustable Platform: Features an adjustable platform to accommodate band widths up to 23mm for versatile use.\n• Spare Pins: Includes spare pins, providing a reliable backup for your watch repair needs.\n• No scratch or damage to your jewelry.\n\nPackage Includes:\n1 x Watch Band Remover\nSpare Pins',
+    specifications: {
+      'Product Type': 'Watch Band Link Remover & Adjuster Tool',
+      'Material': 'Durable Alloy / Stainless Steel',
+      'Compatibility': 'Adjustable platform fits band width up to 23mm',
+      'Special Features': 'Easy Pin Removal, No Scratching, Portable Size',
+      'Package Includes': '1× Watch Band Remover with Spare Pins'
+    },
+    seedReviews: [
+      { name: 'Ali Raza', rating: 5, date: new Date('2025-02-15'), text: 'Very useful watch band remover tool! Adjusted my bracelet easily at home.' },
+      { name: 'Usman Haider', rating: 5, date: new Date('2025-02-28'), text: 'Super affordable and works great. Highly recommended!' }
     ]
   }
 ];
