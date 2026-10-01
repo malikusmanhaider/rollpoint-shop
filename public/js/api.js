@@ -1,4 +1,4 @@
-﻿/* ================================================================
+/* ================================================================
    ROLLSPOINT — CLIENT API LAYER
    Production HTTP client talking directly to the Node.js / Express API.
    Handles public queries, order submission, reviews moderation,
@@ -306,6 +306,17 @@ const Api = {
     const formData = new FormData();
     formData.append('image', file);
     return this.request('/upload', {
+      method: 'POST',
+      body: formData
+    });
+  },
+
+  async adminUploadMultipleImages(files) {
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append('images', file);
+    }
+    return this.request('/upload/multiple', {
       method: 'POST',
       body: formData
     });

@@ -1,4 +1,4 @@
-﻿/* ================================================================
+/* ================================================================
    ROLLSPOINT — ADMIN CONTROLLER & UI
    Full administrative suite: Dashboard metrics, Product CRUD,
    Order Lifecycle, Reviews Moderation, and Theme/Website Settings.
@@ -628,10 +628,10 @@ const AdminUI = {
           </div>
           <div style="margin-top:12px">
             <label class="upload-dropzone">
-              <input type="file" id="pm-file-upload" accept="image/*" style="display:none">
+              <input type="file" id="pm-file-upload" accept="image/*" multiple style="display:none">
               <i data-lucide="upload-cloud" style="width:28px;height:28px;color:var(--accent);margin:0 auto 6px"></i>
-              <div style="font-weight:600;font-size:14px">Upload image from your computer</div>
-              <small style="color:var(--muted)">PNG, JPG, WEBP up to 5MB</small>
+              <div style="font-weight:600;font-size:14px">Upload image(s) from your computer</div>
+              <small style="color:var(--muted)">PNG, JPG, WEBP — Select multiple photos &amp; drag to re-order</small>
             </label>
           </div>
           <div class="image-list-grid" id="modal-image-grid">
@@ -808,19 +808,106 @@ const AdminUI = {
       btn.addEventListener('click', (e) => e.target.closest('.spec-builder-row').remove());
     });
 
-    // Add image URL
+    // Multi-Image grid rendering with Drag & Drop reordering and Move controls
+    let draggedIdx = null;
+
     const renderImagesGrid = () => {
       const grid = document.getElementById('modal-image-grid');
+      if (!grid) return;
+
+      if (!imagesList.length) {
+        grid.innerHTML = `<div style="grid-column: 1 / -1; font-size: 13px; color: var(--muted); padding: 12px 0; text-align: center;">No photos uploaded yet. Select single or multiple photos above.</div>`;
+        return;
+      }
+
       grid.innerHTML = imagesList.map((src, idx) => `
-        <div class="image-thumb-card">
-          <img src="${src}" alt="">
-          <button type="button" class="img-remove-btn" data-idx="${idx}">×</button>
+        <div class="image-thumb-card" draggable="true" data-idx="${idx}" title="Drag to reorder photo position">
+          <div class="img-order-badge ${idx === 0 ? 'is-main' : ''}">${idx === 0 ? '★ 1 (Main)' : `#${idx + 1}`}</div>
+          <img src="${src}" alt="" draggable="false">
+          <div class="img-control-bar">
+            <button type="button" class="img-move-btn btn-move-left" data-idx="${idx}" ${idx === 0 ? 'disabled' : ''} title="Move Left / Previous">‹</button>
+            <button type="button" class="img-move-btn btn-move-right" data-idx="${idx}" ${idx === imagesList.length - 1 ? 'disabled' : ''} title="Move Right / Next">›</button>
+            <button type="button" class="img-remove-btn" data-idx="${idx}" title="Remove Photo">×</button>
+          </div>
         </div>
       `).join('');
+
+      // Bind remove button
       grid.querySelectorAll('.img-remove-btn').forEach(b => {
-        b.addEventListener('click', () => {
-          imagesList.splice(parseInt(b.dataset.idx, 10), 1);
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(b.dataset.idx, 10);
+          imagesList.splice(idx, 1);
           renderImagesGrid();
+        });
+      });
+
+      // Bind move left (previous) button
+      grid.querySelectorAll('.btn-move-left').forEach(b => {
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(b.dataset.idx, 10);
+          if (idx > 0) {
+            const temp = imagesList[idx];
+            imagesList[idx] = imagesList[idx - 1];
+            imagesList[idx - 1] = temp;
+            renderImagesGrid();
+          }
+        });
+      });
+
+      // Bind move right (next) button
+      grid.querySelectorAll('.btn-move-right').forEach(b => {
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(b.dataset.idx, 10);
+          if (idx < imagesList.length - 1) {
+            const temp = imagesList[idx];
+            imagesList[idx] = imagesList[idx + 1];
+            imagesList[idx + 1] = temp;
+            renderImagesGrid();
+          }
+        });
+      });
+
+      // Drag and Drop event listeners for drag-to-reorder
+      const cards = grid.querySelectorAll('.image-thumb-card');
+      cards.forEach(card => {
+        card.addEventListener('dragstart', (e) => {
+          draggedIdx = parseInt(card.dataset.idx, 10);
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', draggedIdx);
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          cards.forEach(c => c.classList.remove('drag-over'));
+          draggedIdx = null;
+        });
+
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          const targetIdx = parseInt(card.dataset.idx, 10);
+          if (targetIdx !== draggedIdx) {
+            card.classList.add('drag-over');
+          }
+        });
+
+        card.addEventListener('dragleave', () => {
+          card.classList.remove('drag-over');
+        });
+
+        card.addEventListener('drop', (e) => {
+          e.preventDefault();
+          card.classList.remove('drag-over');
+          const targetIdx = parseInt(card.dataset.idx, 10);
+          if (draggedIdx !== null && draggedIdx !== targetIdx) {
+            const movedItem = imagesList.splice(draggedIdx, 1)[0];
+            imagesList.splice(targetIdx, 0, movedItem);
+            renderImagesGrid();
+          }
         });
       });
     };
@@ -836,20 +923,32 @@ const AdminUI = {
       }
     });
 
-    // File upload
+    // File upload (supports single or multiple photo selection)
     document.getElementById('pm-file-upload').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
       try {
-        UI.toast('Uploading image…');
-        const res = await Api.adminUploadImage(file);
-        if (res.ok && res.url) {
-          imagesList.push(res.url);
-          renderImagesGrid();
-          UI.toast('Image uploaded successfully');
+        if (files.length === 1) {
+          UI.toast('Uploading image…');
+          const res = await Api.adminUploadImage(files[0]);
+          if (res.ok && res.url) {
+            imagesList.push(res.url);
+            renderImagesGrid();
+            UI.toast('Image uploaded successfully');
+          }
+        } else {
+          UI.toast(`Uploading ${files.length} images…`);
+          const res = await Api.adminUploadMultipleImages(files);
+          if (res.ok && res.urls && res.urls.length) {
+            imagesList.push(...res.urls);
+            renderImagesGrid();
+            UI.toast(`${res.urls.length} images uploaded successfully!`);
+          }
         }
       } catch (err) {
         UI.toast(err.message || 'Upload failed', 'alert-circle', 'error');
+      } finally {
+        e.target.value = ''; // Reset input to allow selecting the same files again if needed
       }
     });
 

@@ -151,8 +151,8 @@ router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
   }
 });
 
-// POST /api/upload/multiple — Multiple Images Upload (up to 8 images at once)
-router.post('/multiple', requireAdmin, upload.array('images', 8), async (req, res) => {
+// POST /api/upload/multiple — Multiple Images Upload (up to 30 images at once)
+router.post('/multiple', requireAdmin, upload.array('images', 30), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ ok: false, error: 'No image files provided.' });
