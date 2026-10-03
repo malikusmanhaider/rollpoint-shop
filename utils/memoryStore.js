@@ -1,4 +1,4 @@
-﻿const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 
 /**
  * In-Memory Store Fallback for local development when MongoDB Atlas URI is pending.
@@ -42,6 +42,8 @@ class MemoryStore {
         contactHours: process.env.STORE_HOURS || 'Mon–Sat · 10:00 am – 8:00 pm',
         shippingRate: parseInt(process.env.FLAT_SHIPPING_RATE || '250', 10),
         heroImage: 'https://img.drz.lazcdn.com/g/kf/S036af77a759e409d9e2f3cf440217919J.png_720x720q80.png',
+        heroImages: [],
+        heroInterval: 3,
         heroProductSlug: 'pocket-inkless-mini-thermal-printer-bluetooth',
         primaryColor: '#D14A0E',
         secondaryColor: '#221B10',

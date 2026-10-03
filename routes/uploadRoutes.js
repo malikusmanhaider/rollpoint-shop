@@ -44,33 +44,49 @@ const upload = multer({
 
 /**
  * Uploads a buffer directly to Cloudinary and returns CDN HTTPS URL.
- * Automatically converts to optimized WebP format with quality tuning.
+ * Preserves multi-frame animation for complex animated WebP/GIF files.
  */
-function uploadBufferToCloudinary(buffer, originalname) {
-  return new Promise((resolve, reject) => {
-    const cleanName = path.basename(originalname, path.extname(originalname))
-      .replace(/[^a-zA-Z0-9_-]/g, '-')
-      .slice(0, 40);
+async function uploadBufferToCloudinary(buffer, originalname) {
+  const cleanName = path.basename(originalname, path.extname(originalname))
+    .replace(/[^a-zA-Z0-9_-]/g, '-')
+    .slice(0, 40);
+  const ext = path.extname(originalname).toLowerCase() || '.webp';
 
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: 'rollpoint/products',
-        public_id: `${cleanName}-${Date.now()}`,
-        resource_type: 'image',
-        format: 'webp', // Auto-compress to modern WebP format
-        transformation: [
-          { quality: 'auto:good' }, // Optimal compression (keeps crystal clear, tiny file size)
-          { fetch_format: 'auto' }
-        ]
-      },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }
-    );
-
-    uploadStream.end(buffer);
-  });
+  // 1. Try standard image stream first
+  try {
+    const res = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'rollpoint/products',
+          public_id: `${cleanName}-${Date.now()}`,
+          resource_type: 'image'
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
+      uploadStream.end(buffer);
+    });
+    return res;
+  } catch (err) {
+    console.log('Standard Cloudinary upload fallback for multi-frame WebP:', err.message);
+    // 2. Fallback to raw stream: preserves multi-frame animated WebP binary intact on CDN
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'rollpoint/products',
+          public_id: `${cleanName}-${Date.now()}${ext}`,
+          resource_type: 'raw'
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
+      uploadStream.end(buffer);
+    });
+  }
 }
 
 /**

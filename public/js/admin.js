@@ -1902,25 +1902,67 @@ const AdminUI = {
                 </div>
 
                 <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">
-                  <div style="width:160px;height:125px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                    <img id="st-hero-preview" src="${esc(s.heroImage || 'https://picsum.photos/seed/rp-hero-counter/900/760.jpg')}" alt="Hero Preview" style="width:100%;height:100%;object-fit:cover">
+                  <div style="width:140px;height:140px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <img id="st-hero-preview" src="${esc(s.heroImage || 'https://picsum.photos/seed/rp-hero-counter/900/760.jpg')}" alt="Hero Preview" style="width:100%;height:100%;object-fit:contain;background:#fff">
                   </div>
                   <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:10px">
                     <div class="field">
-                      <label for="st-hero-img">Image URL</label>
+                      <label for="st-hero-img">Main Cover Image URL</label>
                       <input id="st-hero-img" type="text" value="${esc(s.heroImage || 'https://picsum.photos/seed/rp-hero-counter/900/760.jpg')}" placeholder="Paste Image URL or upload below" style="background:#fff">
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                       <label class="upload-dropzone" style="flex:1;padding:10px;cursor:pointer;background:#fff">
                         <input type="file" id="st-hero-file-upload" accept="image/*" style="display:none">
                         <i data-lucide="upload-cloud" style="width:20px;height:20px;color:var(--accent);margin:0 auto 2px"></i>
-                        <div style="font-weight:600;font-size:12px">Upload Image from PC</div>
+                        <div style="font-weight:600;font-size:12px">Upload Single Cover Image</div>
                         <small style="color:var(--muted);font-size:10px">PNG, JPG, WEBP up to 5MB</small>
                       </label>
                       <button type="button" class="btn btn-outline btn-sm" id="btn-use-prod-img" style="align-self:center;height:fit-content;padding:10px 12px;white-space:nowrap" title="Auto-fill image from selected product">
                         <i data-lucide="sparkles"></i> Use Product's Image
                       </button>
                     </div>
+                  </div>
+                </div>
+
+                <!-- Hero Multi-Image Slider & Timer Settings -->
+                <div style="border-top:1px dashed var(--line);padding-top:14px;margin-top:8px;display:flex;flex-direction:column;gap:12px">
+                  <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+                    <div class="field" style="width:200px">
+                      <label for="st-hero-interval" style="font-weight:600;display:flex;align-items:center;gap:4px">
+                        <i data-lucide="timer" style="width:15px;height:15px;color:var(--accent)"></i> Slide Timer (Seconds)
+                      </label>
+                      <select id="st-hero-interval" style="background:#fff;font-weight:600">
+                        <option value="1" ${s.heroInterval === 1 ? 'selected' : ''}>1 Second (Super Fast)</option>
+                        <option value="2" ${s.heroInterval === 2 ? 'selected' : ''}>2 Seconds</option>
+                        <option value="3" ${!s.heroInterval || s.heroInterval === 3 ? 'selected' : ''}>3 Seconds (Recommended)</option>
+                        <option value="4" ${s.heroInterval === 4 ? 'selected' : ''}>4 Seconds</option>
+                        <option value="5" ${s.heroInterval === 5 ? 'selected' : ''}>5 Seconds</option>
+                        <option value="8" ${s.heroInterval === 8 ? 'selected' : ''}>8 Seconds</option>
+                        <option value="10" ${s.heroInterval === 10 ? 'selected' : ''}>10 Seconds</option>
+                      </select>
+                    </div>
+                    <div style="flex:1;min-width:240px">
+                      <label class="upload-dropzone" style="padding:12px;cursor:pointer;background:#fff;border:2px dashed var(--accent)">
+                        <input type="file" id="st-hero-multi-file-upload" accept="image/*" multiple style="display:none">
+                        <i data-lucide="images" style="width:22px;height:22px;color:var(--accent);margin:0 auto 4px"></i>
+                        <div style="font-weight:700;font-size:13px;color:var(--ink)">Upload Multiple Images for Slideshow</div>
+                        <small style="color:var(--muted);font-size:11px">Select 2, 5, 10 or more images at once from PC</small>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <label for="st-hero-images-txt" style="font-weight:600">Slider Image URLs (One URL per line)</label>
+                    <textarea id="st-hero-images-txt" rows="4" style="background:#fff;font-family:monospace;font-size:12px" placeholder="Paste image URLs here (one per line)...">${(s.heroImages || []).join('\n')}</textarea>
+                  </div>
+
+                  <div id="st-hero-gallery" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+                    ${(s.heroImages || []).map((imgUrl, idx) => `
+                      <div style="position:relative;width:95px;height:75px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#fff">
+                        <img src="${esc(imgUrl)}" style="width:100%;height:100%;object-fit:cover">
+                        <button type="button" class="btn-remove-hero-img" data-idx="${idx}" style="position:absolute;top:3px;right:3px;background:rgba(217,83,79,0.95);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;font-weight:bold;line-height:1;display:flex;align-items:center;justify-content:center" title="Remove image">×</button>
+                      </div>
+                    `).join('')}
                   </div>
                 </div>
               </div>
@@ -2190,6 +2232,64 @@ const AdminUI = {
       });
     }
 
+    // Hero Multi-Image Upload Handler
+    const heroMultiUpload = document.getElementById('st-hero-multi-file-upload');
+    const heroImagesTxt = document.getElementById('st-hero-images-txt');
+    const heroGallery = document.getElementById('st-hero-gallery');
+
+    function renderHeroGallery(urls) {
+      if (!heroGallery) return;
+      heroGallery.innerHTML = urls.map((url, idx) => `
+        <div style="position:relative;width:95px;height:75px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#fff">
+          <img src="${esc(url)}" style="width:100%;height:100%;object-fit:cover">
+          <button type="button" class="btn-remove-hero-img" data-idx="${idx}" style="position:absolute;top:3px;right:3px;background:rgba(217,83,79,0.95);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;font-weight:bold;line-height:1;display:flex;align-items:center;justify-content:center" title="Remove image">×</button>
+        </div>
+      `).join('');
+    }
+
+    if (heroMultiUpload && heroImagesTxt) {
+      heroMultiUpload.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        try {
+          UI.toast(`Uploading ${files.length} slider images…`);
+          const res = await Api.adminUploadMultipleImages(files);
+          if (res.ok && res.urls && res.urls.length) {
+            const existing = heroImagesTxt.value.split('\n').map(u => u.trim()).filter(Boolean);
+            const combined = [...existing, ...res.urls];
+            heroImagesTxt.value = combined.join('\n');
+            renderHeroGallery(combined);
+
+            if (heroImgInput && (!heroImgInput.value || heroImgInput.value.includes('picsum'))) {
+              heroImgInput.value = res.urls[0];
+              if (heroPreview) heroPreview.src = res.urls[0];
+            }
+
+            UI.toast(`${res.urls.length} images added to Hero Slider! Click "Save Website Settings" to apply.`, 'check-circle-2', 'success');
+          }
+        } catch (err) {
+          UI.toast(err.message || 'Multiple upload failed', 'alert-circle', 'error');
+        }
+      });
+
+      heroImagesTxt.addEventListener('input', () => {
+        const urls = heroImagesTxt.value.split('\n').map(u => u.trim()).filter(Boolean);
+        renderHeroGallery(urls);
+      });
+
+      if (heroGallery) {
+        heroGallery.addEventListener('click', (e) => {
+          const btn = e.target.closest('.btn-remove-hero-img');
+          if (!btn) return;
+          const idx = parseInt(btn.dataset.idx, 10);
+          const urls = heroImagesTxt.value.split('\n').map(u => u.trim()).filter(Boolean);
+          urls.splice(idx, 1);
+          heroImagesTxt.value = urls.join('\n');
+          renderHeroGallery(urls);
+        });
+      }
+    }
+
     // Deal image preview & file upload listener
     const dealImgInput = document.getElementById('st-deal-img');
     const dealPreview = document.getElementById('st-deal-preview');
@@ -2265,6 +2365,12 @@ const AdminUI = {
         heroBtn1Text: document.getElementById('st-hero-btn1').value.trim(),
         heroBtn2Text: document.getElementById('st-hero-btn2').value.trim(),
         heroImage: document.getElementById('st-hero-img').value.trim(),
+        heroImages: document.getElementById('st-hero-images-txt')
+          ? document.getElementById('st-hero-images-txt').value.split('\n').map(u => u.trim()).filter(Boolean)
+          : [],
+        heroInterval: document.getElementById('st-hero-interval')
+          ? parseInt(document.getElementById('st-hero-interval').value, 10) || 3
+          : 3,
         heroProductSlug: document.getElementById('st-hero-product').value.trim(),
         usp1Title: document.getElementById('st-usp1-title').value.trim(),
         usp1Sub: document.getElementById('st-usp1-sub').value.trim(),

@@ -1,4 +1,4 @@
-﻿const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 const settingSchema = new mongoose.Schema({
   key: {
@@ -97,6 +97,14 @@ const settingSchema = new mongoose.Schema({
   heroImage: {
     type: String,
     default: 'https://picsum.photos/seed/rp-hero-counter/900/760.jpg'
+  },
+  heroImages: {
+    type: [String],
+    default: []
+  },
+  heroInterval: {
+    type: Number,
+    default: 3
   },
   heroProductSlug: {
     type: String,

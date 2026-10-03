@@ -1,4 +1,4 @@
-﻿/* ================================================================
+/* ================================================================
    ROLLSPOINT — CORE CUSTOMER APPLICATION
    Full-stack integration connecting dynamic MongoDB data,
    thermal receipt engine, order checkout, WhatsApp flow,
@@ -34,7 +34,14 @@ let BUSINESS = {
   mapsUrl: 'https://maps.app.goo.gl/N9xDnGzuN3n8PbCD6?g_st=awb',
   hours: 'Mon–Sat · 10:00 am – 8:00 pm',
   shippingRate: 250,
-  footerAboutText: 'RollsPoint supplies genuine BPA-free thermal rolls, labels and POS hardware to counters across Pakistan — dispatched within 24 hours, delivered on cash-on-delivery.'
+  footerAboutText: 'RollsPoint supplies genuine BPA-free thermal rolls, labels and POS hardware to counters across Pakistan — dispatched within 24 hours, delivered on cash-on-delivery.',
+  dealKicker: 'Special Mega Offer · 2026',
+  dealTitle: 'Hot Selling Gadgets & Essentials',
+  dealSubtitle: 'Shop our top trending Mini Thermal Printers, USB Rechargeable Fans & Party Straws at discounted prices with Cash on Delivery nationwide!',
+  dealImage: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1790848812/rollpoint/products/poster-no-1-1790848811911.webp',
+  dealTag: 'Up to 50% Off',
+  dealBtnText: 'Explore All Products',
+  dealBtnHref: '#/shop'
 };
 
 // Utilities
@@ -254,11 +261,72 @@ const Components = {
             <div><b>${esc(r.name)}</b><small>${formatDate(r.date || r.createdAt)}</small></div>
             ${stars(r.rating)}
           </div>
-          <p>${esc(r.text)}</p>
         </article>`).join('') : '<div style="padding:20px 0;color:var(--muted)">No reviews yet. Be the first to review this product!</div>'}
     </div>`;
   }
 };
+
+let currentHeroTimer = null;
+
+function initHeroSlider() {
+  if (currentHeroTimer) {
+    clearInterval(currentHeroTimer);
+    currentHeroTimer = null;
+  }
+
+  const container = document.getElementById('hero-slider');
+  if (!container) return;
+
+  const slides = container.querySelectorAll('.hero-slide');
+  const dots = container.querySelectorAll('.hero-slider-dot');
+  if (slides.length <= 1) return;
+
+  let currentIndex = 0;
+  const intervalSeconds = Math.max(1, parseInt(BUSINESS.heroInterval || 3, 10));
+  const intervalTime = intervalSeconds * 1000;
+
+  function goToSlide(index) {
+    slides.forEach((slide, i) => {
+      slide.classList.toggle('active', i === index);
+    });
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('active', i === index);
+    });
+    currentIndex = index;
+  }
+
+  function nextSlide() {
+    const nextIndex = (currentIndex + 1) % slides.length;
+    goToSlide(nextIndex);
+  }
+
+  function startAutoPlay() {
+    stopAutoPlay();
+    currentHeroTimer = setInterval(nextSlide, intervalTime);
+  }
+
+  function stopAutoPlay() {
+    if (currentHeroTimer) {
+      clearInterval(currentHeroTimer);
+      currentHeroTimer = null;
+    }
+  }
+
+  dots.forEach(dot => {
+    dot.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const slideIndex = parseInt(dot.getAttribute('data-slide'), 10);
+      goToSlide(slideIndex);
+      startAutoPlay();
+    });
+  });
+
+  container.addEventListener('mouseenter', stopAutoPlay);
+  container.addEventListener('mouseleave', startAutoPlay);
+
+  startAutoPlay();
+}
 
 // Pages
 const Pages = {
@@ -270,6 +338,9 @@ const Pages = {
         Api.getProducts({ featuredOnly: true })
       ]);
       return { cats, featured };
+    },
+    mount() {
+      initHeroSlider();
     },
     render({ cats, featured }) {
       const tiles = cats.map((c) => `
@@ -284,6 +355,29 @@ const Pages = {
 
       const statParts = (BUSINESS.heroStats || '').split('·').map(s => s.trim()).filter(Boolean);
       const statsHtml = statParts.length ? statParts.map(s => `<span>${esc(s)}</span>`).join('') : `<span>1,200+ shops supplied</span><span>48h major-city delivery</span><span>4.8 average rating</span>`;
+
+      const sliderImages = (BUSINESS.heroImages && Array.isArray(BUSINESS.heroImages) && BUSINESS.heroImages.length > 0)
+        ? BUSINESS.heroImages
+        : [BUSINESS.heroImage || 'https://picsum.photos/seed/rp-hero-counter/900/760.jpg'];
+
+      const isMultiSlider = sliderImages.length > 1;
+
+      const heroMediaHtml = isMultiSlider
+        ? `
+          <div class="hero-slider-container" id="hero-slider">
+            ${sliderImages.map((imgUrl, i) => `
+              <div class="hero-slide ${i === 0 ? 'active' : ''}" data-index="${i}">
+                <img src="${esc(imgUrl)}" alt="${esc(BUSINESS.name)} — Slide ${i + 1}">
+              </div>
+            `).join('')}
+            <div class="hero-slider-dots">
+              ${sliderImages.map((_, i) => `
+                <span class="hero-slider-dot ${i === 0 ? 'active' : ''}" data-slide="${i}"></span>
+              `).join('')}
+            </div>
+          </div>
+        `
+        : `<img src="${esc(sliderImages[0])}" alt="${esc(BUSINESS.name)} — Counter supplies">`;
 
       return `
       <section class="hero">
@@ -305,7 +399,7 @@ const Pages = {
           <div class="hero-visual reveal">
             <a class="hero-photo-link" href="${BUSINESS.heroProductSlug ? `#/product/${esc(BUSINESS.heroProductSlug)}` : '#/shop'}" title="View featured product">
               <figure class="hero-photo">
-                <img src="${esc(BUSINESS.heroImage || 'https://picsum.photos/seed/rp-hero-counter/900/760.jpg')}" alt="${esc(BUSINESS.name)} — Counter supplies">
+                ${heroMediaHtml}
               </figure>
             </a>
             ${BUSINESS.heroChip ? `<span class="hero-chip">${esc(BUSINESS.heroChip)}</span>` : ''}
@@ -1531,6 +1625,8 @@ function hydrateReveals(scope = document) {
         heroBtn1Text: settings.heroBtn1Text || BUSINESS.heroBtn1Text,
         heroBtn2Text: settings.heroBtn2Text || BUSINESS.heroBtn2Text,
         heroImage: settings.heroImage || BUSINESS.heroImage,
+        heroImages: (settings.heroImages && settings.heroImages.length) ? settings.heroImages : (BUSINESS.heroImages || []),
+        heroInterval: settings.heroInterval !== undefined ? settings.heroInterval : (BUSINESS.heroInterval || 3),
         heroProductSlug: settings.heroProductSlug !== undefined ? settings.heroProductSlug : BUSINESS.heroProductSlug,
         usp1Title: settings.usp1Title || BUSINESS.usp1Title,
         usp1Sub: settings.usp1Sub || BUSINESS.usp1Sub,
@@ -1548,7 +1644,14 @@ function hydrateReveals(scope = document) {
         mapsUrl: settings.googleMapsUrl || BUSINESS.mapsUrl,
         hours: settings.contactHours || BUSINESS.hours,
         shippingRate: settings.shippingRate !== undefined ? settings.shippingRate : BUSINESS.shippingRate,
-        footerAboutText: settings.footerAboutText || BUSINESS.footerAboutText
+        footerAboutText: settings.footerAboutText || BUSINESS.footerAboutText,
+        dealKicker: settings.dealKicker || BUSINESS.dealKicker,
+        dealTitle: settings.dealTitle || BUSINESS.dealTitle,
+        dealSubtitle: settings.dealSubtitle || BUSINESS.dealSubtitle,
+        dealImage: settings.dealImage || BUSINESS.dealImage,
+        dealTag: settings.dealTag !== undefined ? settings.dealTag : BUSINESS.dealTag,
+        dealBtnText: settings.dealBtnText || BUSINESS.dealBtnText,
+        dealBtnHref: settings.dealBtnHref || BUSINESS.dealBtnHref
       };
 
       if (settings.primaryColor) {
