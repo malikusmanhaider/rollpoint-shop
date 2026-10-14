@@ -677,12 +677,39 @@ const Pages = {
         ])}
         <div class="pdp-grid">
           <div class="reveal">
-            <div class="gallery-main"><img id="gallery-main" src="${initialImage}" alt="${esc(p.name)}"></div>
-            <div class="thumbs">
-              ${images.map((src, i) => `
-                <button class="thumb ${i === 0 ? 'active' : ''}" data-action="select-thumb" data-src="${src}" aria-label="View image ${i + 1}">
-                  <img src="${src}" alt="" loading="lazy">
-                </button>`).join('')}
+            <div class="pdp-gallery-wrap" id="pdp-gallery-wrap">
+              <!-- Desktop Vertical Thumbnails on the LEFT -->
+              ${images.length > 1 ? `
+              <div class="pdp-thumbs-vertical" id="pdp-thumbs">
+                ${images.map((src, i) => `
+                  <button type="button" class="pdp-thumb-btn ${i === 0 ? 'active' : ''}" data-action="select-pdp-thumb" data-index="${i}" data-src="${src}" aria-label="View image ${i + 1}">
+                    <img src="${src}" alt="" loading="lazy">
+                  </button>`).join('')}
+              </div>
+              ` : ''}
+
+              <!-- Main Image Stage / Carousel (Left/Right Arrows, Toynix Counter Badge, Touch Swipe) -->
+              <div class="pdp-main-stage" id="pdp-main-stage">
+                <div class="pdp-stage-track" id="pdp-stage-track">
+                  ${images.map((src, i) => `
+                    <div class="pdp-stage-slide ${i === 0 ? 'active' : ''}" data-index="${i}">
+                      <img src="${src}" alt="${esc(p.name)} — Image ${i + 1}" ${i === 0 ? 'id="gallery-main"' : ''} loading="${i === 0 ? 'eager' : 'lazy'}">
+                    </div>
+                  `).join('')}
+                </div>
+
+                ${images.length > 1 ? `
+                  <button type="button" class="pdp-arrow-btn prev" id="pdp-arrow-prev" aria-label="Previous image">
+                    <i data-lucide="chevron-left"></i>
+                  </button>
+                  <button type="button" class="pdp-arrow-btn next" id="pdp-arrow-next" aria-label="Next image">
+                    <i data-lucide="chevron-right"></i>
+                  </button>
+                  <div class="pdp-counter-badge" id="pdp-counter-badge">
+                    <span id="pdp-current-idx">1</span>/${images.length}
+                  </div>
+                ` : ''}
+              </div>
             </div>
           </div>
           <div class="pdp-info reveal">
@@ -750,6 +777,7 @@ const Pages = {
     mount(data) {
       if (data && data.p) {
         UI.setupPdpStickyBar(data.p, null);
+        UI.setupPdpGallery(data.p);
       }
     }
   },
@@ -1222,6 +1250,96 @@ const UI = {
     if (root) root.innerHTML = '';
   },
 
+  setupPdpGallery(p) {
+    const wrap = document.getElementById('pdp-gallery-wrap');
+    if (!wrap) return;
+
+    const slides = wrap.querySelectorAll('.pdp-stage-slide');
+    const thumbs = wrap.querySelectorAll('.pdp-thumb-btn');
+    const prevBtn = document.getElementById('pdp-arrow-prev');
+    const nextBtn = document.getElementById('pdp-arrow-next');
+    const currentIdxEl = document.getElementById('pdp-current-idx');
+    const total = slides.length;
+
+    if (total === 0) return;
+
+    let currentIndex = 0;
+
+    function goTo(idx) {
+      if (idx < 0) idx = total - 1;
+      if (idx >= total) idx = 0;
+      currentIndex = idx;
+
+      slides.forEach((s, i) => {
+        s.classList.toggle('active', i === currentIndex);
+      });
+
+      thumbs.forEach((t, i) => {
+        const isCurrent = i === currentIndex;
+        t.classList.toggle('active', isCurrent);
+        if (isCurrent) {
+          t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
+      });
+
+      if (currentIdxEl) {
+        currentIdxEl.textContent = currentIndex + 1;
+      }
+    }
+
+    // Expose globally so variation clicks can jump to slide
+    window._goToPdpSlide = goTo;
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        goTo(currentIndex + 1);
+      });
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        goTo(currentIndex - 1);
+      });
+    }
+
+    thumbs.forEach(thumb => {
+      thumb.addEventListener('click', (e) => {
+        e.preventDefault();
+        const idx = parseInt(thumb.dataset.index, 10);
+        if (!isNaN(idx)) goTo(idx);
+      });
+    });
+
+    // Touch Swipe for Mobile Phones
+    const stage = document.getElementById('pdp-main-stage');
+    if (stage) {
+      let startX = 0;
+      let startY = 0;
+
+      stage.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length === 0) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      }, { passive: true });
+
+      stage.addEventListener('touchend', (e) => {
+        if (!e.changedTouches || e.changedTouches.length === 0) return;
+        const diffX = startX - e.changedTouches[0].clientX;
+        const diffY = startY - e.changedTouches[0].clientY;
+
+        // Verify genuine horizontal swipe
+        if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY)) {
+          if (diffX > 0) goTo(currentIndex + 1);
+          else goTo(currentIndex - 1);
+        }
+      }, { passive: true });
+    }
+
+    refreshIcons(wrap);
+  },
+
   renderDrawer(cats) {
     document.getElementById('drawer-body').innerHTML = `
       <a class="d-link" href="#/">Home</a>
@@ -1356,8 +1474,15 @@ const Actions = {
     if (!main) return;
     main.src = el.dataset.src;
     main.style.animation = 'none'; void main.offsetWidth; main.style.animation = '';
-    el.closest('.thumbs').querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+    el.closest('.thumbs')?.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
+  },
+
+  'select-pdp-thumb': (el) => {
+    const idx = parseInt(el.dataset.index, 10);
+    if (!isNaN(idx) && typeof window._goToPdpSlide === 'function') {
+      window._goToPdpSlide(idx);
+    }
   },
 
   'select-variation': (el) => {
@@ -1377,15 +1502,28 @@ const Actions = {
     const varText = document.getElementById('selected-var-text');
     if (varText) varText.textContent = name;
 
-    // 2. Update gallery main image
+    // 2. Update gallery main image and slide
     if (img) {
-      const mainImg = document.getElementById('gallery-main');
-      if (mainImg) {
-        mainImg.src = img;
-        mainImg.style.animation = 'none'; void mainImg.offsetWidth; mainImg.style.animation = '';
+      if (typeof window._goToPdpSlide === 'function') {
+        const matchingThumb = document.querySelector(`.pdp-thumb-btn[data-src="${img}"]`);
+        if (matchingThumb && matchingThumb.dataset.index !== undefined) {
+          window._goToPdpSlide(parseInt(matchingThumb.dataset.index, 10));
+        } else {
+          const activeSlideImg = document.querySelector('.pdp-stage-slide.active img') || document.getElementById('gallery-main');
+          if (activeSlideImg) {
+            activeSlideImg.src = img;
+            activeSlideImg.style.animation = 'none'; void activeSlideImg.offsetWidth; activeSlideImg.style.animation = '';
+          }
+        }
+      } else {
+        const mainImg = document.getElementById('gallery-main');
+        if (mainImg) {
+          mainImg.src = img;
+          mainImg.style.animation = 'none'; void mainImg.offsetWidth; mainImg.style.animation = '';
+        }
       }
-      // Highlight matching thumbnail
-      document.querySelectorAll('.thumbs .thumb').forEach(t => {
+      // Highlight matching thumbnails
+      document.querySelectorAll('.pdp-thumb-btn, .thumbs .thumb').forEach(t => {
         t.classList.toggle('active', t.dataset.src === img);
       });
     }

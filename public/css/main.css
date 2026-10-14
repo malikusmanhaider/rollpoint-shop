@@ -825,7 +825,182 @@ footer { background: var(--ink-bg); color: var(--inv); }
 
 /* ---------- 16. Product Detail (PDP) ---------- */
 .pdp { padding: 28px 0 64px; }
-.pdp-grid { display: grid; grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr); gap: 52px; align-items: start; }
+.pdp-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 48px; align-items: start; }
+
+/* Modern PDP Gallery: Left Vertical Thumbnails on Laptop + Stage Carousel */
+.pdp-gallery-wrap {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* 1. Desktop Vertical Thumbnails Column (Left Side) */
+.pdp-thumbs-vertical {
+  width: 78px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 520px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+}
+
+.pdp-thumbs-vertical::-webkit-scrollbar {
+  width: 4px;
+}
+.pdp-thumbs-vertical::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pdp-thumbs-vertical::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 4px;
+}
+
+.pdp-thumb-btn {
+  width: 74px;
+  height: 74px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 2px solid var(--line);
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  display: block;
+}
+
+.pdp-thumb-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pdp-thumb-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--ink-2);
+}
+
+.pdp-thumb-btn.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
+
+/* 2. Main Gallery Stage */
+.pdp-main-stage {
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-1);
+  user-select: none;
+}
+
+.pdp-stage-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pdp-stage-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #ffffff;
+}
+
+.pdp-stage-slide.active {
+  opacity: 1;
+  visibility: visible;
+  z-index: 2;
+}
+
+.pdp-stage-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #ffffff;
+  display: block;
+}
+
+/* Navigation Arrow Buttons on Main Image */
+.pdp-arrow-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  color: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: all 0.2s ease;
+}
+
+.pdp-main-stage:hover .pdp-arrow-btn {
+  opacity: 1;
+}
+
+.pdp-arrow-btn:hover {
+  background: #ffffff;
+  color: var(--accent);
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.pdp-arrow-btn.prev {
+  left: 14px;
+}
+
+.pdp-arrow-btn.next {
+  right: 14px;
+}
+
+/* Counter Badge: Bottom-right Pill (3/12 style like Toynix) */
+.pdp-counter-badge {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  color: #111111;
+  font-family: var(--fm);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 11px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+/* Legacy Fallbacks */
 .gallery-main {
   aspect-ratio: 1/1; border-radius: 16px; overflow: hidden; background: var(--paper-deep);
   border: 1px solid var(--line);
@@ -1656,28 +1831,39 @@ footer { background: var(--ink-bg); color: var(--inv); }
     font-size: 12.5px;
   }
 
-  /* Product Detail Page (PDP) Mobile */
+  /* Product Detail Page (PDP) Mobile: HIDE thumbnail panel, full swipeable carousel like Toynix */
   .pdp {
     padding: 14px 0 44px;
   }
-  .gallery-main {
-    border-radius: 12px;
-  }
+  .pdp-thumbs-vertical,
   .thumbs {
-    gap: 7px;
-    margin-top: 9px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    flex-wrap: nowrap;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    display: none !important;
   }
-  .thumbs::-webkit-scrollbar { display: none; }
-  .thumb {
-    width: 60px;
-    height: 60px;
-    border-radius: 8px;
-    flex-shrink: 0;
+  .pdp-gallery-wrap {
+    display: block;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .pdp-main-stage {
+    aspect-ratio: 1 / 1;
+    border-radius: 14px;
+  }
+  .pdp-arrow-btn {
+    width: 34px;
+    height: 34px;
+    opacity: 0.92;
+  }
+  .pdp-arrow-btn.prev {
+    left: 8px;
+  }
+  .pdp-arrow-btn.next {
+    right: 8px;
+  }
+  .pdp-counter-badge {
+    bottom: 10px;
+    right: 10px;
+    font-size: 12px;
+    padding: 3px 9px;
   }
   .pdp-info h1 {
     font-size: 23px;
