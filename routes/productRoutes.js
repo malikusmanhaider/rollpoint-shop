@@ -5,7 +5,6 @@ const Product = require('../models/Product');
 const Review = require('../models/Review');
 const Category = require('../models/Category');
 const { requireAdmin } = require('../middleware/auth');
-const { INITIAL_CATEGORIES, INITIAL_PRODUCTS } = require('../config/seed');
 const { memoryStore } = require('../utils/memoryStore');
 
 function slugify(text) {
@@ -30,17 +29,6 @@ router.get('/categories', async (req, res) => {
     let dbCategories = [];
 
     if (mongoose.connection.readyState === 1) {
-      // Ensure initial categories exist
-      for (const c of INITIAL_CATEGORIES) {
-        const exists = await Category.findOne({ slug: c.slug });
-        if (!exists) {
-          await Category.create(c).catch(() => null);
-        } else if (c.image && !exists.image) {
-          exists.image = c.image;
-          await exists.save().catch(() => null);
-        }
-      }
-
       dbCategories = await Category.find().sort({ createdAt: 1 });
       products = await Product.find(includeAll ? {} : { isPublished: true });
     } else {
@@ -259,7 +247,9 @@ router.delete('/categories/:slug', requireAdmin, async (req, res) => {
       }
 
       if (category) {
-        await Category.findOneAndDelete({ slug });
+        await Category.deleteOne({ _id: category._id });
+      } else {
+        await Category.deleteMany({ slug: new RegExp(`^${slug}$`, 'i') });
       }
 
       return res.json({
@@ -324,28 +314,6 @@ router.get('/', async (req, res) => {
     const { category, q, inStockOnly, featuredOnly, sort, limit } = req.query;
 
     if (mongoose.connection.readyState === 1) {
-      // Ensure missing initial products exist
-      for (const p of INITIAL_PRODUCTS) {
-        const exists = await Product.findOne({ $or: [{ id: p.id }, { slug: p.slug }] });
-        if (!exists) {
-          const { seedReviews, ...prodData } = p;
-          const created = await Product.create(prodData).catch(() => null);
-          if (created && seedReviews && seedReviews.length) {
-            for (const rev of seedReviews) {
-              await Review.create({
-                productId: created.id,
-                productSlug: created.slug,
-                name: rev.name,
-                rating: rev.rating,
-                text: rev.text,
-                status: 'approved',
-                date: rev.date || new Date()
-              }).catch(() => null);
-            }
-          }
-        }
-      }
-
       const query = { isPublished: true };
       if (category) query.category = category;
       if (inStockOnly === 'true' || inStockOnly === true) query.stock = { $gt: 0 };

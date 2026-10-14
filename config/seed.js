@@ -8,7 +8,6 @@ const INITIAL_CATEGORIES = [
   { slug: 'mini-printer', name: 'Mini Printer', tagline: 'Portable & Bluetooth pocket printers', image: 'https://img.drz.lazcdn.com/g/kf/S036af77a759e409d9e2f3cf440217919J.png_720x720q80.png' },
   { slug: 'mini-fan', name: 'Mini Fan', tagline: 'Portable mini fans for daily carry and travel', image: 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?w=720&auto=format&fit=crop&q=80' },
   { slug: 'party-items', name: 'Party Items', tagline: 'Colorful party straws and fun event essentials', image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=720&auto=format&fit=crop&q=80' },
-  { slug: 'winter-products', name: 'Winter Products', tagline: 'Electric lint removers & winter wool care essentials', image: 'https://img.drz.lazcdn.com/g/kf/S98cdd821656f4243a3714b89acd90f58D.png_720x720q80.png' },
   { slug: 'discounted-products', name: 'Discounted Products', tagline: 'Special discount deals & watch accessories', image: 'https://img.drz.lazcdn.com/g/kf/Sfe2312bd41474dabaf95a1f0659dd058U.jpg_720x720q80.jpg' }
 ];
 
@@ -194,53 +193,6 @@ const INITIAL_PRODUCTS = [
     ]
   },
   {
-    id: 'rp-119',
-    slug: 'electric-lint-remover-rechargeable-fabric-shaver',
-    name: 'Electric Lint Remover for Clothes & Sweaters (USB Rechargeable Fabric Shaver Machine)',
-    price: 899,
-    oldPrice: 1999,
-    category: 'winter-products',
-    categoryName: 'Winter Products',
-    stock: 65,
-    rating: 4.9,
-    reviewCount: 4,
-    featured: true,
-    isPublished: true,
-    keywords: ['lint remover', 'electric lint remover', 'fabric shaver', 'sweater lint remover', 'fuzz remover', 'usb lint remover', 'winter products', 'wool care', 'clothes lint shaver', 'lint removal machine'],
-    variationTitle: 'Color Family',
-    variations: [
-      {
-        name: 'White & Emerald Green',
-        price: 899,
-        oldPrice: 1999,
-        image: 'https://img.drz.lazcdn.com/g/kf/S98cdd821656f4243a3714b89acd90f58D.png_720x720q80.png'
-      }
-    ],
-    images: [
-      'https://img.drz.lazcdn.com/g/kf/S98cdd821656f4243a3714b89acd90f58D.png_720x720q80.png',
-      'https://img.drz.lazcdn.com/static/pk/p/551ac32b7648a2bcbaec17e732fb8d61.png_720x720q80.png',
-      'https://img.drz.lazcdn.com/static/pk/p/e9da8299b4a3bcc7d45529ae5c3cf3ad.jpg_720x720q80.jpg',
-      'https://img.drz.lazcdn.com/static/pk/p/6b018b8abeeda7fe84bdd60e3006dda8.jpg_720x720q80.jpg',
-      'https://img.drz.lazcdn.com/static/pk/p/a3d5d62b93775f8706761db16d9ae774.jpg_720x720q80.jpg'
-    ],
-    shortDescription: 'Electric Lint Remover for Clothes & Sweaters – USB Rechargeable Fabric Shaver with Sharp Stainless Steel Blades, Safety Lock & Detachable Fuzz Container.',
-    description: 'Say goodbye to lint, fuzz, and hair balls with our Electric Lint Remover! Designed to refresh your wool clothes, sweaters, jackets, and furniture fabrics effortlessly, this fabric shaver is a winter wardrobe essential.\n\nEquipped with 3 sharp stainless steel rotary blades and a protective honeycomb mesh, it removes fuzz and pilling quickly without snagging or damaging delicate fabrics.\n\nFeaturing a USB rechargeable battery, ergonomic hand grip, detachable lint storage container, and safety lock protection (automatically stops when protective cover is open).',
-    specifications: {
-      'Product Type': 'Electric Lint Remover & Fabric Shaver',
-      'Power Source': 'USB Rechargeable (Cable Included)',
-      'Charging Time': '1.5 – 2 Hours Fast Charge',
-      'Blade Material': 'Sharp Stainless Steel 3-Leaf Rotary Blades',
-      'Safety Protection': 'Auto-Stop Safety Lock Feature',
-      'Lint Container': 'Detachable & Translucent Easy-Clean Box',
-      'Package Includes': '1× Electric Lint Remover, 1× USB Cable, 1× Cleaning Brush, 1× User Manual'
-    },
-    seedReviews: [
-      { name: 'Usman Malik', rating: 5, date: new Date('2025-02-14'), text: 'Bohat zabardast product hai! Winters ke sweaters aur coats se saari bura (lint) minute mein saaf ho gayi.' },
-      { name: 'Zahra Khan', rating: 5, date: new Date('2025-02-20'), text: 'Super fast USB charging and safe on clothes. Looks exact as shown in pictures. Highly recommended!' },
-      { name: 'Hamza Farooq', rating: 5, date: new Date('2025-03-01'), text: 'Very useful fabric shaver for winter clothes. Sharp blades and easy cleaning container.' }
-    ]
-  },
-  {
     id: 'rp-120',
     slug: 'watch-wrist-bracelet-watch-band-link-slit-strap-remover-adjuster',
     name: 'Watch Wrist Bracelet Watch Band Link Slit Strap Remover Adjuster Pins Repair Tools',
@@ -314,27 +266,24 @@ async function seedDatabase() {
       console.log(`✅ Default admin account created: ${adminEmail}`);
     }
 
-    // 3. Seed missing Categories
-    for (const cat of INITIAL_CATEGORIES) {
-      const existingCat = await Category.findOne({ slug: cat.slug });
-      if (!existingCat) {
+    // 3. Seed initial Categories ONLY if database has 0 categories
+    const categoryCount = await Category.countDocuments();
+    if (categoryCount === 0) {
+      for (const cat of INITIAL_CATEGORIES) {
         await Category.create(cat).catch(() => null);
-        console.log(`✅ Seeded missing category: ${cat.name}`);
-      } else if (cat.image && !existingCat.image) {
-        existingCat.image = cat.image;
-        await existingCat.save().catch(() => null);
+        console.log(`✅ Seeded initial category: ${cat.name}`);
       }
     }
 
-    // 4. Seed missing Products
-    for (const p of INITIAL_PRODUCTS) {
-      const existingProd = await Product.findOne({ $or: [{ id: p.id }, { slug: p.slug }] });
-      if (!existingProd) {
+    // 4. Seed initial Products ONLY if database has 0 products
+    const productCount = await Product.countDocuments();
+    if (productCount === 0) {
+      for (const p of INITIAL_PRODUCTS) {
         const { seedReviews, ...productData } = p;
-        const createdProduct = await Product.create(productData);
-        console.log(`✅ Seeded missing product: ${p.name}`);
+        const createdProduct = await Product.create(productData).catch(() => null);
+        console.log(`✅ Seeded initial product: ${p.name}`);
 
-        if (seedReviews && seedReviews.length) {
+        if (createdProduct && seedReviews && seedReviews.length) {
           for (const rev of seedReviews) {
             await Review.create({
               productId: createdProduct.id,
