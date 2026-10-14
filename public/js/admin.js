@@ -1825,6 +1825,60 @@ const AdminUI = {
     const allProducts = Array.isArray(productsRes) ? productsRes : (productsRes?.products || []);
     const currentAdmin = Api.getAdminUser() || { name: 'Admin', email: 'admin@rollpoint.pk' };
 
+    const existingBanners = (s.heroBanners && Array.isArray(s.heroBanners) && s.heroBanners.length)
+      ? s.heroBanners
+      : (s.heroImages && Array.isArray(s.heroImages) && s.heroImages.length)
+        ? s.heroImages.map(img => ({ image: (typeof img === 'object' ? img.image : img), link: (typeof img === 'object' ? (img.link || '#/shop') : '#/shop'), productSlug: (typeof img === 'object' ? (img.productSlug || '') : '') }))
+        : [];
+
+    function renderBannerRow(b = { image: '', link: '', productSlug: '' }, idx = 0) {
+      return `
+      <div class="banner-slide-editor-item" data-idx="${idx}" style="background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:14px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 1px 3px rgba(0,0,0,0.03);position:relative">
+        <div style="width:130px;flex-shrink:0;display:flex;flex-direction:column;gap:6px">
+          <div style="width:100%;height:80px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#fafafa;display:flex;align-items:center;justify-content:center">
+            <img src="${esc(b.image || '')}" class="banner-preview-img" style="width:100%;height:100%;object-fit:cover;${b.image ? '' : 'display:none'}">
+            <span class="banner-no-img-text" style="color:var(--muted);font-size:11px;${b.image ? 'display:none' : ''}">No Image</span>
+          </div>
+          <label class="btn btn-outline btn-sm" style="cursor:pointer;padding:4px 6px;font-size:11px;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px">
+            <i data-lucide="upload" style="width:12px;height:12px"></i> Upload
+            <input type="file" class="banner-single-file-upload" accept="image/*" style="display:none">
+          </label>
+        </div>
+        
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:2px">Banner Image URL:</label>
+            <input type="text" class="banner-input-image" value="${esc(b.image || '')}" placeholder="Paste Image URL or click Upload" style="font-size:12.5px;padding:6px 10px;background:#fff">
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:2px">
+                <i data-lucide="package" style="width:12px;height:12px;display:inline-block;vertical-align:-1px"></i> Select Product (Auto-links):
+              </label>
+              <select class="banner-select-product" style="font-size:12.5px;padding:6px 8px;background:#fff">
+                <option value="">-- No Product / Custom Link --</option>
+                ${allProducts.map(p => `
+                  <option value="${p.slug}" ${b.productSlug === p.slug ? 'selected' : ''}>
+                    ${esc(p.name)} (${formatPrice(p.price)})
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+            <div style="flex:1;min-width:180px">
+              <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:2px">
+                <i data-lucide="link" style="width:12px;height:12px;display:inline-block;vertical-align:-1px"></i> Or Custom Click Link:
+              </label>
+              <input type="text" class="banner-input-link" value="${esc(b.link || '')}" placeholder="#/shop or #/category/slug" style="font-size:12.5px;padding:6px 10px;background:#fff">
+            </div>
+            <button type="button" class="btn btn-sm btn-delete-banner" style="background:#fff2f2;color:#d9534f;border:1px solid #ffd0d0;padding:6px 12px;height:35px;display:flex;align-items:center;gap:4px" title="Delete this slide">
+              <i data-lucide="trash-2" style="width:14px;height:14px"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      `;
+    }
+
     container.innerHTML = `
     <div class="admin-header">
       <div>
@@ -1951,18 +2005,22 @@ const AdminUI = {
                     </div>
                   </div>
 
-                  <div class="field">
-                    <label for="st-hero-images-txt" style="font-weight:600">Slider Image URLs (One URL per line)</label>
-                    <textarea id="st-hero-images-txt" rows="4" style="background:#fff;font-family:monospace;font-size:12px" placeholder="Paste image URLs here (one per line)...">${(s.heroImages || []).join('\n')}</textarea>
-                  </div>
+                  <div class="field full">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                      <label style="font-weight:700;font-size:14px;color:var(--ink);display:flex;align-items:center;gap:6px">
+                        <i data-lucide="layers" style="width:16px;height:16px;color:var(--accent)"></i> Slideshow Banners &amp; Individual Links
+                      </label>
+                      <button type="button" class="btn btn-outline btn-sm" id="btn-add-banner-slide" style="padding:6px 12px;display:flex;align-items:center;gap:4px">
+                        <i data-lucide="plus"></i> Add Banner Slide
+                      </button>
+                    </div>
+                    <p style="color:var(--muted);font-size:12px;margin-bottom:12px">
+                      Har banner image ke aage aap direct koi <b>Product</b> select kar sakte hain (jis se click karne par customer seedha us product page par jaye ga), ya koi bhi <b>Custom Link</b> (jaise category ya promotion link) laga sakte hain.
+                    </p>
 
-                  <div id="st-hero-gallery" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
-                    ${(s.heroImages || []).map((imgUrl, idx) => `
-                      <div style="position:relative;width:95px;height:75px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#fff">
-                        <img src="${esc(imgUrl)}" style="width:100%;height:100%;object-fit:cover">
-                        <button type="button" class="btn-remove-hero-img" data-idx="${idx}" style="position:absolute;top:3px;right:3px;background:rgba(217,83,79,0.95);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;font-weight:bold;line-height:1;display:flex;align-items:center;justify-content:center" title="Remove image">×</button>
-                      </div>
-                    `).join('')}
+                    <div id="st-banner-items-list" style="display:flex;flex-direction:column;gap:12px">
+                      ${existingBanners.map((b, idx) => renderBannerRow(b, idx)).join('')}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2234,60 +2292,107 @@ const AdminUI = {
 
     // Hero Multi-Image Upload Handler
     const heroMultiUpload = document.getElementById('st-hero-multi-file-upload');
-    const heroImagesTxt = document.getElementById('st-hero-images-txt');
-    const heroGallery = document.getElementById('st-hero-gallery');
+    const bannerItemsList = document.getElementById('st-banner-items-list');
+    const btnAddBannerSlide = document.getElementById('btn-add-banner-slide');
 
-    function renderHeroGallery(urls) {
-      if (!heroGallery) return;
-      heroGallery.innerHTML = urls.map((url, idx) => `
-        <div style="position:relative;width:95px;height:75px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#fff">
-          <img src="${esc(url)}" style="width:100%;height:100%;object-fit:cover">
-          <button type="button" class="btn-remove-hero-img" data-idx="${idx}" style="position:absolute;top:3px;right:3px;background:rgba(217,83,79,0.95);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;font-weight:bold;line-height:1;display:flex;align-items:center;justify-content:center" title="Remove image">×</button>
-        </div>
-      `).join('');
+    if (btnAddBannerSlide && bannerItemsList) {
+      btnAddBannerSlide.addEventListener('click', () => {
+        const div = document.createElement('div');
+        div.innerHTML = renderBannerRow({ image: '', link: '#/shop', productSlug: '' }, bannerItemsList.children.length);
+        bannerItemsList.appendChild(div.firstElementChild);
+        if (window.lucide) window.lucide.createIcons({ root: bannerItemsList });
+      });
     }
 
-    if (heroMultiUpload && heroImagesTxt) {
+    if (bannerItemsList) {
+      // 1. Product select change -> auto-fills link
+      bannerItemsList.addEventListener('change', async (e) => {
+        if (e.target.classList.contains('banner-select-product')) {
+          const row = e.target.closest('.banner-slide-editor-item');
+          const linkInput = row?.querySelector('.banner-input-link');
+          if (linkInput && e.target.value) {
+            linkInput.value = `#/product/${e.target.value}`;
+          }
+        }
+
+        // 2. Single file upload for individual banner slide
+        if (e.target.classList.contains('banner-single-file-upload')) {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const row = e.target.closest('.banner-slide-editor-item');
+          const imgInput = row?.querySelector('.banner-input-image');
+          const preview = row?.querySelector('.banner-preview-img');
+          const placeholder = row?.querySelector('.banner-no-img-text');
+
+          try {
+            UI.toast('Uploading banner photo…');
+            const res = await Api.adminUploadImage(file);
+            if (res && res.url) {
+              if (imgInput) imgInput.value = res.url;
+              if (preview) {
+                preview.src = res.url;
+                preview.style.display = 'block';
+              }
+              if (placeholder) placeholder.style.display = 'none';
+              UI.toast('Banner photo uploaded!', 'check-circle-2', 'success');
+            }
+          } catch (err) {
+            UI.toast(err.message || 'Image upload failed', 'alert-circle', 'error');
+          }
+        }
+      });
+
+      // 3. Image URL text input change -> update preview
+      bannerItemsList.addEventListener('input', (e) => {
+        if (e.target.classList.contains('banner-input-image')) {
+          const row = e.target.closest('.banner-slide-editor-item');
+          const preview = row?.querySelector('.banner-preview-img');
+          const placeholder = row?.querySelector('.banner-no-img-text');
+          const val = e.target.value.trim();
+          if (val) {
+            if (preview) {
+              preview.src = val;
+              preview.style.display = 'block';
+            }
+            if (placeholder) placeholder.style.display = 'none';
+          } else {
+            if (preview) preview.style.display = 'none';
+            if (placeholder) placeholder.style.display = 'block';
+          }
+        }
+      });
+
+      // 4. Delete banner slide
+      bannerItemsList.addEventListener('click', (e) => {
+        const delBtn = e.target.closest('.btn-delete-banner');
+        if (delBtn) {
+          const row = delBtn.closest('.banner-slide-editor-item');
+          if (row) row.remove();
+        }
+      });
+    }
+
+    // 5. Bulk Multiple Files Upload for Slideshow
+    if (heroMultiUpload && bannerItemsList) {
       heroMultiUpload.addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
         if (!files.length) return;
         try {
-          UI.toast(`Uploading ${files.length} slider images…`);
+          UI.toast(`Uploading ${files.length} banner images…`);
           const res = await Api.adminUploadMultipleImages(files);
           if (res.ok && res.urls && res.urls.length) {
-            const existing = heroImagesTxt.value.split('\n').map(u => u.trim()).filter(Boolean);
-            const combined = [...existing, ...res.urls];
-            heroImagesTxt.value = combined.join('\n');
-            renderHeroGallery(combined);
-
-            if (heroImgInput && (!heroImgInput.value || heroImgInput.value.includes('picsum'))) {
-              heroImgInput.value = res.urls[0];
-              if (heroPreview) heroPreview.src = res.urls[0];
-            }
-
-            UI.toast(`${res.urls.length} images added to Hero Slider! Click "Save Website Settings" to apply.`, 'check-circle-2', 'success');
+            res.urls.forEach((url, i) => {
+              const div = document.createElement('div');
+              div.innerHTML = renderBannerRow({ image: url, link: '#/shop', productSlug: '' }, bannerItemsList.children.length + i);
+              bannerItemsList.appendChild(div.firstElementChild);
+            });
+            if (window.lucide) window.lucide.createIcons({ root: bannerItemsList });
+            UI.toast(`${res.urls.length} banners added! Don't forget to click "Save Website Settings".`, 'check-circle-2', 'success');
           }
         } catch (err) {
           UI.toast(err.message || 'Multiple upload failed', 'alert-circle', 'error');
         }
       });
-
-      heroImagesTxt.addEventListener('input', () => {
-        const urls = heroImagesTxt.value.split('\n').map(u => u.trim()).filter(Boolean);
-        renderHeroGallery(urls);
-      });
-
-      if (heroGallery) {
-        heroGallery.addEventListener('click', (e) => {
-          const btn = e.target.closest('.btn-remove-hero-img');
-          if (!btn) return;
-          const idx = parseInt(btn.dataset.idx, 10);
-          const urls = heroImagesTxt.value.split('\n').map(u => u.trim()).filter(Boolean);
-          urls.splice(idx, 1);
-          heroImagesTxt.value = urls.join('\n');
-          renderHeroGallery(urls);
-        });
-      }
     }
 
     // Deal image preview & file upload listener
@@ -2365,13 +2470,19 @@ const AdminUI = {
         heroBtn1Text: document.getElementById('st-hero-btn1').value.trim(),
         heroBtn2Text: document.getElementById('st-hero-btn2').value.trim(),
         heroImage: document.getElementById('st-hero-img').value.trim(),
-        heroImages: document.getElementById('st-hero-images-txt')
-          ? document.getElementById('st-hero-images-txt').value.split('\n').map(u => u.trim()).filter(Boolean)
-          : [],
+        heroImages: Array.from(document.querySelectorAll('.banner-slide-editor-item'))
+          .map(i => i.querySelector('.banner-input-image')?.value.trim() || '')
+          .filter(Boolean),
+        heroBanners: Array.from(document.querySelectorAll('.banner-slide-editor-item')).map(item => {
+          const image = item.querySelector('.banner-input-image')?.value.trim() || '';
+          const productSlug = item.querySelector('.banner-select-product')?.value.trim() || '';
+          const link = item.querySelector('.banner-input-link')?.value.trim() || (productSlug ? `#/product/${productSlug}` : '#/shop');
+          return { image, productSlug, link };
+        }).filter(b => b.image),
         heroInterval: document.getElementById('st-hero-interval')
           ? parseInt(document.getElementById('st-hero-interval').value, 10) || 3
           : 3,
-        heroProductSlug: document.getElementById('st-hero-product').value.trim(),
+        heroProductSlug: document.getElementById('st-hero-product') ? document.getElementById('st-hero-product').value.trim() : '',
         usp1Title: document.getElementById('st-usp1-title').value.trim(),
         usp1Sub: document.getElementById('st-usp1-sub').value.trim(),
         usp2Title: document.getElementById('st-usp2-title').value.trim(),

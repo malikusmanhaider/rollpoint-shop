@@ -27,6 +27,7 @@ let BUSINESS = {
     'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042325/rollpoint/products/ChatGPT-Image-Sep-29--2026--03_10_12-PM-1791042319646.png',
     'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042353/rollpoint/products/Orange-Watch-Link-Removal-Tool-1791042350926.png'
   ],
+  heroBanners: [],
   heroInterval: 3,
   heroProductSlug: 'thermal-roll-80x80',
   usp1Title: 'Flat Rs. 250 delivery',
@@ -418,31 +419,41 @@ const Pages = {
       const viewAll = `<a class="cat-tile cat-all reveal" href="#/shop">
         <i data-lucide="arrow-right"></i><b>View all products</b><span>Explore Full Catalog</span></a>`;
 
-      const sliderImages = (BUSINESS.heroImages && Array.isArray(BUSINESS.heroImages) && BUSINESS.heroImages.length > 0)
-        ? BUSINESS.heroImages
-        : [
-            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042015/rollpoint/products/mini-printer-1791042004350.png',
-            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042256/rollpoint/products/Premium-Pink-Thermal-Paper-Rolls-1791042241347.png',
-            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042313/rollpoint/products/Colorful-Flexible-Straw-Bouquet-1791042309447.png',
-            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042323/rollpoint/products/ChatGPT-Image-Sep-29--2026--03_12_10-PM-1791042319642.png',
-            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042325/rollpoint/products/ChatGPT-Image-Sep-29--2026--03_10_12-PM-1791042319646.png',
-            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042353/rollpoint/products/Orange-Watch-Link-Removal-Tool-1791042350926.png'
-          ];
+      const sliderBanners = (BUSINESS.heroBanners && Array.isArray(BUSINESS.heroBanners) && BUSINESS.heroBanners.length > 0)
+        ? BUSINESS.heroBanners
+        : (BUSINESS.heroImages && Array.isArray(BUSINESS.heroImages) && BUSINESS.heroImages.length > 0)
+          ? BUSINESS.heroImages.map(img => (typeof img === 'object' ? img : { image: img, link: '#/shop', productSlug: '' }))
+          : [
+              { image: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042015/rollpoint/products/mini-printer-1791042004350.png', link: '#/shop', productSlug: '' },
+              { image: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042256/rollpoint/products/Premium-Pink-Thermal-Paper-Rolls-1791042241347.png', link: '#/shop', productSlug: '' },
+              { image: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042313/rollpoint/products/Colorful-Flexible-Straw-Bouquet-1791042309447.png', link: '#/shop', productSlug: '' },
+              { image: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042323/rollpoint/products/ChatGPT-Image-Sep-29--2026--03_12_10-PM-1791042319642.png', link: '#/shop', productSlug: '' },
+              { image: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042325/rollpoint/products/ChatGPT-Image-Sep-29--2026--03_10_12-PM-1791042319646.png', link: '#/shop', productSlug: '' },
+              { image: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042353/rollpoint/products/Orange-Watch-Link-Removal-Tool-1791042350926.png', link: '#/shop', productSlug: '' }
+            ];
 
-      const isMultiSlider = sliderImages.length > 1;
+      const isMultiSlider = sliderBanners.length > 1;
 
       return `
       <!-- FULL-BLEED GRAND HERO BANNER -->
       <section class="hero-banner-section">
         <div class="big-banner-wrapper" id="big-hero-banner" role="region" aria-label="Featured Store Banners">
           <div class="banner-slides-track">
-            ${sliderImages.map((imgUrl, i) => `
+            ${sliderBanners.map((b, i) => {
+              const imgUrl = (typeof b === 'string') ? b : (b.image || '');
+              const destLink = (typeof b === 'object' && b.productSlug)
+                ? `#/product/${esc(b.productSlug)}`
+                : (typeof b === 'object' && b.link)
+                  ? esc(b.link)
+                  : '#/shop';
+              return `
               <div class="banner-slide ${i === 0 ? 'active' : ''}" data-index="${i}">
-                <a href="#/shop" class="banner-slide-link" title="Explore RollsPoint Store">
+                <a href="${destLink}" class="banner-slide-link" title="Open Featured Banner">
                   <img src="${esc(imgUrl)}" alt="${esc(BUSINESS.name)} Banner ${i + 1}" class="banner-slide-img" loading="${i === 0 ? 'eager' : 'lazy'}">
                 </a>
               </div>
-            `).join('')}
+            `;
+            }).join('')}
           </div>
 
           ${isMultiSlider ? `
@@ -453,7 +464,7 @@ const Pages = {
               <i data-lucide="chevron-right"></i>
             </button>
             <div class="banner-dots-bar" id="banner-dots">
-              ${sliderImages.map((_, i) => `
+              ${sliderBanners.map((_, i) => `
                 <span class="banner-dot ${i === 0 ? 'active' : ''}" data-slide="${i}"></span>
               `).join('')}
             </div>
@@ -1818,6 +1829,7 @@ function hydrateReveals(scope = document) {
         heroBtn2Text: settings.heroBtn2Text || BUSINESS.heroBtn2Text,
         heroImage: settings.heroImage || BUSINESS.heroImage,
         heroImages: (settings.heroImages && settings.heroImages.length) ? settings.heroImages : (BUSINESS.heroImages || []),
+        heroBanners: (settings.heroBanners && settings.heroBanners.length) ? settings.heroBanners : (BUSINESS.heroBanners || []),
         heroInterval: settings.heroInterval !== undefined ? settings.heroInterval : (BUSINESS.heroInterval || 3),
         heroProductSlug: settings.heroProductSlug !== undefined ? settings.heroProductSlug : BUSINESS.heroProductSlug,
         usp1Title: settings.usp1Title || BUSINESS.usp1Title,

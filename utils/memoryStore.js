@@ -40,6 +40,7 @@ class MemoryStore {
       shippingRate: parseInt(process.env.FLAT_SHIPPING_RATE || '250', 10),
       heroImage: 'https://img.drz.lazcdn.com/g/kf/S036af77a759e409d9e2f3cf440217919J.png_720x720q80.png',
       heroImages: [],
+      heroBanners: [],
       heroInterval: 3,
       heroProductSlug: 'pocket-inkless-mini-thermal-printer-bluetooth',
       primaryColor: '#D14A0E',

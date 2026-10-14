@@ -102,6 +102,14 @@ const settingSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  heroBanners: {
+    type: [{
+      image: { type: String, default: '' },
+      link: { type: String, default: '' },
+      productSlug: { type: String, default: '' }
+    }],
+    default: []
+  },
   heroInterval: {
     type: Number,
     default: 3
