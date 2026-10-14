@@ -9,7 +9,8 @@
 let BUSINESS = {
   name: 'RollsPoint',
   tagline: 'Counter supplies, delivered.',
-  logo: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1790260393/rollpoint/brand/rollpoint-official-logo.webp',
+  logo: (typeof window !== 'undefined' && window.location.protocol === 'file:') ? './ROLLS%20POINT.gif' : '/ROLLS%20POINT.gif',
+  originalLogo: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1790260393/rollpoint/brand/rollpoint-official-logo.webp',
   heroKicker: '// Counter supplies · Pakistan',
   heroTitle: 'Thermal rolls, labels & POS gear — delivered to your counter.',
   heroSubtitle: 'Genuine BPA-free thermal paper, shipping labels and point-of-sale hardware for shops that never stop. Flat Rs. 250 delivery, cash on delivery, nationwide.',
@@ -17,7 +18,16 @@ let BUSINESS = {
   heroChip: '−19% on rolls',
   heroBtn1Text: 'Shop all products',
   heroBtn2Text: 'Browse categories',
-  heroImage: 'https://picsum.photos/seed/rp-hero-counter/900/760.jpg',
+  heroImage: 'https://res.cloudinary.com/zadbyf6g/image/upload/v1791041996/rollpoint/products/mini-printer-1791041988078.png',
+  heroImages: [
+    'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042015/rollpoint/products/mini-printer-1791042004350.png',
+    'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042256/rollpoint/products/Premium-Pink-Thermal-Paper-Rolls-1791042241347.png',
+    'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042313/rollpoint/products/Colorful-Flexible-Straw-Bouquet-1791042309447.png',
+    'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042323/rollpoint/products/ChatGPT-Image-Sep-29--2026--03_12_10-PM-1791042319642.png',
+    'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042325/rollpoint/products/ChatGPT-Image-Sep-29--2026--03_10_12-PM-1791042319646.png',
+    'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042353/rollpoint/products/Orange-Watch-Link-Removal-Tool-1791042350926.png'
+  ],
+  heroInterval: 3,
   heroProductSlug: 'thermal-roll-80x80',
   usp1Title: 'Flat Rs. 250 delivery',
   usp1Sub: 'Anywhere in Pakistan',
@@ -115,6 +125,12 @@ const Components = {
   },
 
   brand(dark = false) {
+    const isGif = BUSINESS.logo && BUSINESS.logo.toLowerCase().includes('.gif');
+    if (isGif) {
+      return `<a class="brand brand-has-gif" href="#/" aria-label="${esc(BUSINESS.name || 'RollsPoint')} home">
+        <img src="${BUSINESS.logo}" alt="${esc(BUSINESS.name || 'RollsPoint')}" class="brand-logo-img">
+      </a>`;
+    }
     return `<a class="brand" href="#/" aria-label="${BUSINESS.name} home">
       ${this.logo(dark ? 'var(--inv)' : 'var(--ink)', dark ? 'var(--ink-bg)' : 'var(--paper)')}
       <span class="brand-name">${esc(BUSINESS.name || 'RollsPoint')}</span></a>`;
@@ -274,15 +290,18 @@ function initHeroSlider() {
     currentHeroTimer = null;
   }
 
-  const container = document.getElementById('hero-slider');
-  if (!container) return;
+  const wrapper = document.getElementById('big-hero-banner');
+  if (!wrapper) return;
 
-  const slides = container.querySelectorAll('.hero-slide');
-  const dots = container.querySelectorAll('.hero-slider-dot');
+  const slides = wrapper.querySelectorAll('.banner-slide');
+  const dots = wrapper.querySelectorAll('.banner-dot');
+  const prevBtn = document.getElementById('banner-prev-btn');
+  const nextBtn = document.getElementById('banner-next-btn');
+
   if (slides.length <= 1) return;
 
   let currentIndex = 0;
-  const intervalSeconds = Math.max(1, parseInt(BUSINESS.heroInterval || 3, 10));
+  const intervalSeconds = Math.max(2, parseInt(BUSINESS.heroInterval || 3, 10));
   const intervalTime = intervalSeconds * 1000;
 
   function goToSlide(index) {
@@ -300,6 +319,11 @@ function initHeroSlider() {
     goToSlide(nextIndex);
   }
 
+  function prevSlide() {
+    const prevIndex = (currentIndex - 1 + slides.length) % slides.length;
+    goToSlide(prevIndex);
+  }
+
   function startAutoPlay() {
     stopAutoPlay();
     currentHeroTimer = setInterval(nextSlide, intervalTime);
@@ -312,6 +336,24 @@ function initHeroSlider() {
     }
   }
 
+  if (nextBtn) {
+    nextBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      nextSlide();
+      startAutoPlay();
+    });
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      prevSlide();
+      startAutoPlay();
+    });
+  }
+
   dots.forEach(dot => {
     dot.addEventListener('click', (e) => {
       e.preventDefault();
@@ -322,8 +364,31 @@ function initHeroSlider() {
     });
   });
 
-  container.addEventListener('mouseenter', stopAutoPlay);
-  container.addEventListener('mouseleave', startAutoPlay);
+  // Touch Swipe for Mobile Phones
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  wrapper.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+    stopAutoPlay();
+  }, { passive: true });
+
+  wrapper.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) nextSlide();
+      else prevSlide();
+    }
+    startAutoPlay();
+  }, { passive: true });
+
+  wrapper.addEventListener('mouseenter', stopAutoPlay);
+  wrapper.addEventListener('mouseleave', startAutoPlay);
+
+  if (window.lucide) {
+    window.lucide.createIcons({ root: wrapper });
+  }
 
   startAutoPlay();
 }
@@ -353,57 +418,46 @@ const Pages = {
       const viewAll = `<a class="cat-tile cat-all reveal" href="#/shop">
         <i data-lucide="arrow-right"></i><b>View all products</b><span>Explore Full Catalog</span></a>`;
 
-      const statParts = (BUSINESS.heroStats || '').split('·').map(s => s.trim()).filter(Boolean);
-      const statsHtml = statParts.length ? statParts.map(s => `<span>${esc(s)}</span>`).join('') : `<span>1,200+ shops supplied</span><span>48h major-city delivery</span><span>4.8 average rating</span>`;
-
       const sliderImages = (BUSINESS.heroImages && Array.isArray(BUSINESS.heroImages) && BUSINESS.heroImages.length > 0)
         ? BUSINESS.heroImages
-        : [BUSINESS.heroImage || 'https://picsum.photos/seed/rp-hero-counter/900/760.jpg'];
+        : [
+            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042015/rollpoint/products/mini-printer-1791042004350.png',
+            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042256/rollpoint/products/Premium-Pink-Thermal-Paper-Rolls-1791042241347.png',
+            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042313/rollpoint/products/Colorful-Flexible-Straw-Bouquet-1791042309447.png',
+            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042323/rollpoint/products/ChatGPT-Image-Sep-29--2026--03_12_10-PM-1791042319642.png',
+            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042325/rollpoint/products/ChatGPT-Image-Sep-29--2026--03_10_12-PM-1791042319646.png',
+            'https://res.cloudinary.com/zadbyf6g/image/upload/v1791042353/rollpoint/products/Orange-Watch-Link-Removal-Tool-1791042350926.png'
+          ];
 
       const isMultiSlider = sliderImages.length > 1;
 
-      const heroMediaHtml = isMultiSlider
-        ? `
-          <div class="hero-slider-container" id="hero-slider">
+      return `
+      <!-- FULL-BLEED GRAND HERO BANNER -->
+      <section class="hero-banner-section">
+        <div class="big-banner-wrapper" id="big-hero-banner" role="region" aria-label="Featured Store Banners">
+          <div class="banner-slides-track">
             ${sliderImages.map((imgUrl, i) => `
-              <div class="hero-slide ${i === 0 ? 'active' : ''}" data-index="${i}">
-                <img src="${esc(imgUrl)}" alt="${esc(BUSINESS.name)} — Slide ${i + 1}">
+              <div class="banner-slide ${i === 0 ? 'active' : ''}" data-index="${i}">
+                <a href="#/shop" class="banner-slide-link" title="Explore RollsPoint Store">
+                  <img src="${esc(imgUrl)}" alt="${esc(BUSINESS.name)} Banner ${i + 1}" class="banner-slide-img" loading="${i === 0 ? 'eager' : 'lazy'}">
+                </a>
               </div>
             `).join('')}
-            <div class="hero-slider-dots">
+          </div>
+
+          ${isMultiSlider ? `
+            <button class="banner-nav-btn prev" id="banner-prev-btn" aria-label="Previous Banner">
+              <i data-lucide="chevron-left"></i>
+            </button>
+            <button class="banner-nav-btn next" id="banner-next-btn" aria-label="Next Banner">
+              <i data-lucide="chevron-right"></i>
+            </button>
+            <div class="banner-dots-bar" id="banner-dots">
               ${sliderImages.map((_, i) => `
-                <span class="hero-slider-dot ${i === 0 ? 'active' : ''}" data-slide="${i}"></span>
+                <span class="banner-dot ${i === 0 ? 'active' : ''}" data-slide="${i}"></span>
               `).join('')}
             </div>
-          </div>
-        `
-        : `<img src="${esc(sliderImages[0])}" alt="${esc(BUSINESS.name)} — Counter supplies">`;
-
-      return `
-      <section class="hero">
-        <div class="container hero-grid">
-          <div class="hero-copy reveal">
-            <p class="kicker">${esc(BUSINESS.heroKicker || '// Counter supplies · Pakistan')}</p>
-            <h1>${esc(BUSINESS.heroTitle || 'Thermal rolls, labels & POS gear — delivered to your counter.')}</h1>
-            <p class="hero-sub">${esc(BUSINESS.heroSubtitle || 'Genuine BPA-free thermal paper, shipping labels and point-of-sale hardware for shops that never stop. Flat Rs. 250 delivery, cash on delivery, nationwide.')}</p>
-            <div class="hero-cta">
-              <a class="btn btn-ink btn-lg" href="#/shop">${esc(BUSINESS.heroBtn1Text || 'Shop all products')} <i data-lucide="arrow-right"></i></a>
-              <a class="btn btn-whatsapp btn-lg" href="https://wa.me/${BUSINESS.whatsappIntl}?text=${encodeURIComponent('Hi RollsPoint! I want to order thermal rolls & supplies.')}" target="_blank">
-                <i data-lucide="message-circle"></i> Chat on WhatsApp
-              </a>
-            </div>
-            <div class="hero-stats mono">
-              ${statsHtml}
-            </div>
-          </div>
-          <div class="hero-visual reveal">
-            <a class="hero-photo-link" href="${BUSINESS.heroProductSlug ? `#/product/${esc(BUSINESS.heroProductSlug)}` : '#/shop'}" title="View featured product">
-              <figure class="hero-photo">
-                ${heroMediaHtml}
-              </figure>
-            </a>
-            ${BUSINESS.heroChip ? `<span class="hero-chip">${esc(BUSINESS.heroChip)}</span>` : ''}
-          </div>
+          ` : ''}
         </div>
       </section>
 
